@@ -117,14 +117,22 @@ function normal_mode_decomposition(g::GaussianState, N, maxnumber; kwargs...)
 end
 
 function hafnian(A)
-    @assert iseven(size(A, 1))
+    if size(A, 1) != size(A, 2)
+        error("not a square matrix")
+    end
+    if isodd(size(A, 1))
+        return zero(eltype(A))
+    end
+    if size(A, 1) == 0
+        return one(eltype(A))
+    end
 
     # Ported from the sample GNU Octave function provided by The Walrus at
     # https://github.com/XanaduAI/thewalrus/blob/master/octave/hafnian.m
     n = div(size(A, 1), 2)
     P = kron(I(n), [[0 1]; [1 0]])
     A = A * P
-    comb = zeros(2, n + 1)
+    comb = zeros(eltype(A), 2, n + 1)
     haf = 0
     for m in 1:(2^n - 1)
         sieve = reverse(digits(m; base=2, pad=n)) .== 1
@@ -133,7 +141,7 @@ function hafnian(A)
         B = A[idx, idx]
         B_evals, _ = eigen(B)
         cnt = 1
-        comb[1, :] .= zeros(n + 1)
+        comb[1, :] .= zeros(eltype(A), n + 1)
         comb[1, 1] = 1
         for i in 1:n
             factor = sum(B_evals .^ i) / (2i)
@@ -157,7 +165,15 @@ function hafnian(A)
 end
 
 function loophafnian(A)
-    @assert iseven(size(A, 1))
+    if size(A, 1) != size(A, 2)
+        error("not a square matrix")
+    end
+    if isodd(size(A, 1))
+        return zero(eltype(A))
+    end
+    if size(A, 1) == 0
+        return one(eltype(A))
+    end
 
     # Ported from the sample GNU Octave function provided by The Walrus at
     # https://github.com/XanaduAI/thewalrus/blob/master/octave/loophafnian.m
@@ -166,7 +182,7 @@ function loophafnian(A)
     P = kron(I(n), [[0 1]; [1 0]])
     A = A * P
     C = transpose(P * D)
-    comb = zeros(2, n + 1)
+    comb = zeros(eltype(A), 2, n + 1)
     lhaf = 0
     for m in 1:(2^n - 1)
         sieve = reverse(digits(m; base=2, pad=n)) .== 1
@@ -177,7 +193,7 @@ function loophafnian(A)
         D1 = D[idx]
         B_evals, _ = eigen(B)
         cnt = 1
-        comb[1, :] .= zeros(n + 1)
+        comb[1, :] .= zeros(eltype(A), n + 1)
         comb[1, 1] = 1
         for i in 1:n
             factor = sum(B_evals .^ i) / (2i) + dot(C1, D1) / 2
