@@ -116,6 +116,130 @@ function normal_mode_decomposition(g::GaussianState, N, maxnumber; kwargs...)
     return nm_evals, num_idxs, S
 end
 
+function twomodesqueezing(ζ, n, k1, k2)
+    @assert 1 ≤ k1 ≤ n && 1 ≤ k2 ≤ n
+    F = Matrix{Float64}(I, 2n, 2n)
+
+    θ = angle(ζ)
+    r = abs(ζ)
+
+    S = [[cos(θ) sin(θ)]; [sin(θ) -cos(θ)]]
+    F[(2k1 - 1):(2k1), (2k1 - 1):(2k1)] .= cosh(r) .* I(2)
+    F[(2k1 - 1):(2k1), (2k2 - 1):(2k2)] .= -sinh(r) .* S
+    F[(2k2 - 1):(2k2), (2k1 - 1):(2k1)] .= -sinh(r) .* S
+    F[(2k2 - 1):(2k2), (2k2 - 1):(2k2)] .= cosh(r) .* I(2)
+    return F
+end
+
+# Eq. (65)-(66) in [1]
+# Construct the B(p) matrix with B[unroll(p), unroll(p)]
+unroll(p) = reduce(vcat, [repeat([i], p[i]) for i in eachindex(p)])
+
+directsum(A, B) = [A zeros(size(A, 1), size(B, 2)); zeros(size(B, 1), size(A, 2)) B]
+
+"""
+    franckcondon(m, α::AbstractVector, Wl::AbstractMatrix, Wr::AbstractMatrix, n)
+
+Compute the matrix element ``⟨m| D(α) U(Wl) U(Wr) |n⟩`` according to the algorithm
+presented in [1]. `Wl` and `Wr` are symplectic matrices while `α` is a complex vector.
+If ``N`` is the number of modes of the system, then
+
+- `m` and `n` are tuples of ``N`` natural numbers
+- `α` is a vector of ``N`` complex numbers
+- `Wl` and `Wr` are ``2N × 2N`` symplectic matrices
+
+# References
+
+[1] Nicolás Quesada, ‘Franck-Condon factors by counting perfect matchings of graphs with
+loops’. [The Journal of Chemical Physics 150.16 (2019)](https://doi.org/10.1063/1.5086387).
+"""
+function franckcondon(m, α, Wl, Wr, n)
+    # If N is the number of modes of the system:
+    # · m and n are tuples of N natural numbers
+    # · α is a vector of N complex numbers
+    # · Wl and Wr are 2N×2N symplectic matrices
+    @assert length(m) == length(n) == length(α)
+    L = length(m)
+    @assert all(size(Wl) .== 2L .&& size(Wr) .== 2L)
+
+    # U(Wl)* U(Wr) = U(Wl⁻¹ Wr) = U(Ul * S * Ur) = U(Ul) U(S) U(Ur)
+    # through the Euler decomposition.
+    # Ul and Ur are orthogonal symplectic transformations, S is a diagonal squeezing matrix.
+    Ul, S, Ur = euler(inv(Wl) * Wr)
+
+    Ulext = directsum(Ul, I(2L))
+    Urext = directsum(Ur, I(2L))
+    Sext = directsum(S, I(2L))
+
+    t = @. asinh(sqrt(n))
+    sq2m = prod(twomodesqueezing(t[k], 2L, k, L + k) for k in 1:L)
+    Vl, K, _ = euler(Ulext * Sext * Urext * sq2m)
+    # Here `euler` gives us 4L × 4L real, symplectic matrices; we need complex, unitary
+    # 2L × 2L matrices instead. Vl and Vr are orthogonal so there exists an unitary matrix
+    # which is equivalent to them, and we extract it as follows (we only need Vl)
+    Vl_xxpp = GaussianStates.permute_to_xxpp(Vl)
+    uVl = complex.(Vl_xxpp[1:(2L), 1:(2L)], Vl_xxpp[(2L + 1):end, 1:(2L)])
+    Λ = log.(diag(GaussianStates.permute_to_xxpp(K))[1:(2L)])
+    @assert uVl * uVl' ≈ I
+
+    p = [m; n]
+    αext = [α; zeros(L)]
+
+    B = uVl * Diagonal(tanh.(Λ)) * transpose(uVl)
+    ζ = αext - B * conj(αext)
+    T =
+        exp(-1 / 2 * (norm(αext)^2 - dot(αext, B, αext))) /
+        sqrt(prod(@. factorial(p) * cosh(Λ)))
+
+    R = prod(@. cosh(t) / (tanh(t)^n))
+    p_inds = unroll(p)
+    Bp = B[p_inds, p_inds]
+    ζp = ζ[p_inds]
+    lhf = loophafnian(Bp + Diagonal(ζp .- diag(Bp)))
+    return R * T * lhf
+end
+
+function franckcondon(m, Wl, Wr, n)
+    # If N is the number of modes of the system:
+    # · m and n are tuples of N natural numbers
+    # · α is a vector of N complex numbers
+    # · Wl and Wr are 2N×2N symplectic matrices
+    @assert length(m) == length(n)
+    L = length(m)
+    @assert all(size(Wl) .== 2L .&& size(Wr) .== 2L)
+
+    # U(Wl)* U(Wr) = U(Wl⁻¹ Wr) = U(Ul * S * Ur) = U(Ul) U(S) U(Ur)
+    # through the Euler decomposition.
+    # Ul and Ur are orthogonal symplectic transformations, S is a diagonal squeezing matrix.
+    Ul, S, Ur = euler(inv(Wl) * Wr)
+
+    Ulext = directsum(Ul, I(2L))
+    Urext = directsum(Ur, I(2L))
+    Sext = directsum(S, I(2L))
+
+    t = @. asinh(sqrt(n))
+    sq2m = prod(twomodesqueezing(t[k], 2L, k, L + k) for k in 1:L)
+    Vl, K, _ = euler(Ulext * Sext * Urext * sq2m)
+    # Here `euler` gives us 4L × 4L real, symplectic matrices; we need complex, unitary
+    # 2L × 2L matrices instead. Vl and Vr are orthogonal so there exists an unitary matrix
+    # which is equivalent to them, and we extract it as follows (we only need Vl)
+    Vl_xxpp = GaussianStates.permute_to_xxpp(Vl)
+    uVl = complex.(Vl_xxpp[1:(2L), 1:(2L)], Vl_xxpp[(2L + 1):end, 1:(2L)])
+    Λ = log.(diag(GaussianStates.permute_to_xxpp(K))[1:(2L)])
+    @assert uVl * uVl' ≈ I
+
+    p = [m; n]
+
+    B = uVl * Diagonal(tanh.(Λ)) * transpose(uVl)
+    T = 1 / sqrt(prod(@. factorial(p) * cosh(Λ)))
+    R = prod(@. cosh(t) / (tanh(t)^n))
+
+    p_inds = unroll(p)
+    Bp = B[p_inds, p_inds]
+    hf = hafnian(Bp .- diag(Bp))
+    return R * T * hf
+end
+
 function hafnian(A)
     if size(A, 1) != size(A, 2)
         error("not a square matrix")
@@ -216,3 +340,4 @@ function loophafnian(A)
     end
     return lhaf
 end
+
