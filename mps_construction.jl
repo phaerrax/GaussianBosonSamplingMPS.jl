@@ -41,37 +41,51 @@ function largest_normal_mode_eigenvalues(
     num = deepcopy(num0)
     evs = normal_mode_eigenvalue.(symplectic_eigenvalues[1], 0:maxnumber)
 
-    for i in 2:length(symplectic_eigenvalues)
-        next_sequence = normal_mode_eigenvalue.(symplectic_eigenvalues[i], 0:maxnumber)
-        evs_product = Vector{Float64}(undef, length(evs) * length(next_sequence))
-        for n in eachindex(evs), m in eachindex(next_sequence)
-            evs_product[(n - 1) * length(next_sequence) + m] = evs[n] * next_sequence[m]
+    if length(symplectic_eigenvalues) == 1
+        # Special branch for when there's just one symplectic eigenvalue.
+        # We cannot just skip the loop otherwise all values in `evs`, even those below
+        # `lowerthreshold`, will be kept in the final result. This is fine in principle,
+        # it would just result in a lazier approximation in the end, but we'd like to be
+        # consistent across all sites of the MPS.
+
+        # In this case we have a single symplectic eigenvalue so it's easy to order the
+        # normal-mode eigenvalues: they decrease with the occupation number.
+        sort!(evs; rev=true)
+        filter!(>(lowerthreshold), evs)
+        return evs, first(num0, length(evs))
+    else
+        for i in 2:length(symplectic_eigenvalues)
+            next_sequence = normal_mode_eigenvalue.(symplectic_eigenvalues[i], 0:maxnumber)
+            evs_product = Vector{Float64}(undef, length(evs) * length(next_sequence))
+            for n in eachindex(evs), m in eachindex(next_sequence)
+                evs_product[(n - 1) * length(next_sequence) + m] = evs[n] * next_sequence[m]
+            end
+
+            idx_above_threshold = findall(>(lowerthreshold), evs_product)
+            filter!(>(lowerthreshold), evs_product)
+
+            largest_evs_idxs = last(sortperm(evs_product), N)
+            evs = reverse(evs_product[largest_evs_idxs])
+
+            idx_above_threshold = reverse(idx_above_threshold[largest_evs_idxs])
+
+            num =
+                vcat.(
+                    num[div.(idx_above_threshold .- 1, maxnumber .+ 1) .+ 1],
+                    num0[mod.(idx_above_threshold .- 1, maxnumber .+ 1) .+ 1],
+                )
         end
 
-        idx_above_threshold = findall(>(lowerthreshold), evs_product)
-        filter!(>(lowerthreshold), evs_product)
+        # Original code. Here we sort and keep the largest `maxdim` values, but this is
+        # something that can be easily done outside of this function.
+        # idx = last(sortperm(evs), maxdim)
+        # idx_sorted = idx[sortperm(evs[idx])]
+        # evs = reverse(evs[idx_sorted])
+        # num = reverse(num[idx_sorted])
 
-        largest_evs_idxs = last(sortperm(evs_product), N)
-        evs = reverse(evs_product[largest_evs_idxs])
-
-        idx_above_threshold = reverse(idx_above_threshold[largest_evs_idxs])
-
-        num =
-            vcat.(
-                num[div.(idx_above_threshold .- 1, maxnumber .+ 1) .+ 1],
-                num0[mod.(idx_above_threshold .- 1, maxnumber .+ 1) .+ 1],
-            )
+        perm_decreasing = sortperm(evs; rev=true)
+        return evs[perm_decreasing], num[perm_decreasing]
     end
-
-    # Original code. Here we sort and keep the largest `maxdim` values, but this is
-    # something that can be easily done outside of this function.
-    # idx = last(sortperm(evs), maxdim)
-    # idx_sorted = idx[sortperm(evs[idx])]
-    # evs = reverse(evs[idx_sorted])
-    # num = reverse(num[idx_sorted])
-
-    perm_decreasing = sortperm(evs; rev=true)
-    return evs[perm_decreasing], num[perm_decreasing]
 end
 
 """
