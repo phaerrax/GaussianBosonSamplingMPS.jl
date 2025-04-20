@@ -1,4 +1,4 @@
-using LinearAlgebra, GaussianStates
+using LinearAlgebra, GaussianStates, ITensors, ITensorMPS
 
 """
     normal_mode_eigenvalue(x, m)
@@ -149,7 +149,7 @@ end
 # Construct the B(p) matrix with B[unroll(p), unroll(p)]
 unroll(p) = reduce(vcat, [repeat([i], p[i]) for i in eachindex(p)])
 
-directsum(A, B) = [A zeros(size(A, 1), size(B, 2)); zeros(size(B, 1), size(A, 2)) B]
+dirsum(A, B) = [A zeros(size(A, 1), size(B, 2)); zeros(size(B, 1), size(A, 2)) B]
 
 """
     franckcondon(m, α::AbstractVector, Wl::AbstractMatrix, Wr::AbstractMatrix, n)
@@ -181,9 +181,9 @@ function franckcondon(m, α, Wl, Wr, n)
     # Ul and Ur are orthogonal symplectic transformations, S is a diagonal squeezing matrix.
     Ul, S, Ur = euler(inv(Wl) * Wr)
 
-    Ulext = directsum(Ul, I(2L))
-    Urext = directsum(Ur, I(2L))
-    Sext = directsum(S, I(2L))
+    Ulext = dirsum(Ul, I(2L))
+    Urext = dirsum(Ur, I(2L))
+    Sext = dirsum(S, I(2L))
 
     t = @. asinh(sqrt(n))
     sq2m = prod(twomodesqueezing(t[k], 2L, k, L + k) for k in 1:L)
@@ -227,9 +227,9 @@ function franckcondon(m, Wl, Wr, n)
     # Ul and Ur are orthogonal symplectic transformations, S is a diagonal squeezing matrix.
     Ul, S, Ur = euler(inv(Wl) * Wr)
 
-    Ulext = directsum(Ul, I(2L))
-    Urext = directsum(Ur, I(2L))
-    Sext = directsum(S, I(2L))
+    Ulext = dirsum(Ul, I(2L))
+    Urext = dirsum(Ur, I(2L))
+    Sext = dirsum(S, I(2L))
 
     t = @. asinh(sqrt(n))
     sq2m = prod(twomodesqueezing(t[k], 2L, k, L + k) for k in 1:L)
@@ -377,12 +377,6 @@ function _MPSblock_end(n_k, num_idxs_right, S_right)
     return m
 end
 
-"""
-    MPS(g::GaussianState, maxdim, maxnumber)
-
-Build an MPS representation of the Gaussian state `g` with bond dimension up to `maxdim`,
-truncating the Fock space of each mode at the `maxnumber`-particle sector.
-"""
 function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2)
     if !isapprox(purity(g), 1)
         error("the Gaussian state must be pure.")
@@ -396,7 +390,7 @@ function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2)
     @assert nm_evals_right[1] ≈ 1
     @assert all(num_idxs_right[1] .== 0)
 
-    A = []  # matrices of the MPS
+    A = []  # array of MPS matrices
 
     for bond_idx in 1:(N - 1)
         gpart = partialtrace(g, 1:bond_idx)
@@ -406,18 +400,62 @@ function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2)
         # At step k we have the decompositions of [1 ... k] as "right" and
         # [k+1 ... N] as "left".
         num_idxs_left = first(num_idxs_left, maxdim)
-        push!(
-            A,
-            [
-                _MPSblock(n_k, num_idxs_left, S_left, num_idxs_right, S_right) for
-                n_k in 0:maxnumber
-            ],
+        t = Array{ComplexF64}(
+            undef, maxnumber + 1, length(num_idxs_right), length(num_idxs_left)
         )
+        for n_k in 0:maxnumber
+            t[n_k + 1, :, :] .= _MPSblock(
+                n_k, num_idxs_left, S_left, num_idxs_right, S_right
+            )
+        end
+        push!(A, t)
 
         num_idxs_right = num_idxs_left
         S_right = S_left
     end
-    push!(A, [_MPSblock_end(n_k, num_idxs_right, S_right) for n_k in 0:maxnumber])
+
+    t = Array{ComplexF64}(undef, maxnumber + 1, length(num_idxs_right), 1)
+    for n_k in 0:maxnumber
+        t[n_k + 1, :, 1] .= _MPSblock_end(n_k, num_idxs_right, S_right)
+    end
+    push!(A, t)
 
     return A
+end
+
+"""
+    MPS(g::GaussianState, maxdim, maxnumber; kwargs...)
+
+Build an MPS representation of the Gaussian state `g` with bond dimension up to `maxdim`,
+truncating the Fock space of each mode at the `maxnumber`-particle sector.
+"""
+function ITensorMPS.MPS(g::GaussianState, maxdim, maxnumber; kwargs...)
+    N = nmodes(g)
+    blocks = mps_matrices(g, maxdim, maxnumber; kwargs...)
+
+    @assert getindex.(size.(blocks), 2)[2:end] == getindex.(size.(blocks), 3)[1:(end - 1)]
+    linds_dim = getindex.(size.(blocks), 2)[2:end]
+
+    sites = siteinds("Boson", N; dim=maxnumber + 1)
+    v = Vector{ITensor}(undef, N)
+    # MPS structure:
+    #
+    #                s[j]                     s[j+1]
+    #                  │                         │
+    #                  │                         │
+    #                ┌───┐    l[j]             ┌───┐  l[j+1]
+    #   ╶╶╶╶─────────│ j │────────── ──────────│j+1│─────────╶╶╶
+    #   dag(l[j-1])  └───┘           dag(l[j]) └───┘
+    #
+    # (Actually the `dag` operation here doesn't really do anything: when called on an
+    # Index, if they carry arrows it will reverse these arrows. But our indices do not
+    # carry any arrow, it's something that appears only when dealing with quantum numbers,
+    # so it's a no-op in our case. We leave the `dag` there anyway.)
+    l = [Index(linds_dim[i], "Link,l=$i") for i in 1:(N - 1)]
+    v[1] = ITensor(blocks[1], sites[1], l[1])
+    for i in 2:(N - 1)
+        v[i] = ITensor(blocks[i], sites[i], l[i], dag(l[i - 1]))
+    end
+    v[N] = ITensor(blocks[N], sites[N], dag(l[N - 1]))
+    return MPS(v)
 end
