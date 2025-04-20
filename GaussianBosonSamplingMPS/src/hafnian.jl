@@ -98,4 +98,3 @@ function loophafnian(A)
     end
     return lhaf
 end
-

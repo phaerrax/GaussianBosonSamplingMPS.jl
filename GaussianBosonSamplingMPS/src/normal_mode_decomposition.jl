@@ -127,4 +127,3 @@ function normal_mode_decomposition(g::GaussianState, N, maxnumber; kwargs...)
     nm_evals, num_idxs = largest_normal_mode_eigenvalues(sp_evals, N, maxnumber; kwargs...)
     return nm_evals, num_idxs, S
 end
-

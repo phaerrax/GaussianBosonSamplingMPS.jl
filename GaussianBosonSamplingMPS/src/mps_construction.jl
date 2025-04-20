@@ -118,7 +118,7 @@ function franckcondon(m, Wl, Wr, n)
 
     p_inds = unroll(p)
     Bp = B[p_inds, p_inds]
-    hf = hafnian(Bp .- diag(Bp))
+    hf = hafnian(Bp .- Diagonal(Bp))
     return R * T * hf
 end
 
