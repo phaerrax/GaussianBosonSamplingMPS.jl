@@ -341,3 +341,69 @@ function loophafnian(A)
     return lhaf
 end
 
+function _MPSblock(n_k, num_idxs_left, S_left, num_idxs_right, S_right)
+    m = Matrix{ComplexF64}(undef, length(num_idxs_right), length(num_idxs_left))
+    for i in axes(m, 1)
+        for j in axes(m, 2)
+            m[i, j] = franckcondon(
+                [n_k; num_idxs_left[j]], dirsum(I(2), S_left), S_right, num_idxs_right[i]
+            )
+        end
+    end
+    return m
+end
+
+function _MPSblock_end(n_k, num_idxs_right, S_right)
+    # Dedicated function for the last site (we can't use _MPSblock) with "empty" `S_left`
+    # and `num_idxs_left` otherwise we'd get a 0xN matrix since `length(num_idxs_left) == 0`
+    m = Matrix{ComplexF64}(undef, length(num_idxs_right), 1)
+    for i in axes(m, 1)
+        m[i, 1] = franckcondon([n_k], I(2), S_right, num_idxs_right[i])
+    end
+    return m
+end
+
+"""
+    MPS(g::GaussianState, maxdim, maxnumber)
+
+Build an MPS representation of the Gaussian state `g` with bond dimension up to `maxdim`,
+truncating the Fock space of each mode at the `maxnumber`-particle sector.
+"""
+function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2)
+    if !isapprox(purity(g), 1)
+        error("the Gaussian state must be pure.")
+    end
+
+    N = nmodes(g)
+    nm_evals_right, num_idxs_right, S_right = normal_mode_decomposition(g, N, maxnumber)
+    # This is the normal-mode decomposition of a pure state, so we should find only one
+    # eigenvalue, 1, corresponding to the vacuum.
+    @assert length(nm_evals_right) == length(num_idxs_right) == 1
+    @assert nm_evals_right[1] ≈ 1
+    @assert all(num_idxs_right[1] .== 0)
+
+    A = []  # matrices of the MPS
+
+    for bond_idx in 1:(N - 1)
+        gpart = partialtrace(g, 1:bond_idx)
+        _, num_idxs_left, S_left = normal_mode_decomposition(gpart, nvals, maxnumber)
+        # (We don't need the eigenvalues.)
+
+        # At step k we have the decompositions of [1 ... k] as "right" and
+        # [k+1 ... N] as "left".
+        num_idxs_left = first(num_idxs_left, maxdim)
+        push!(
+            A,
+            [
+                _MPSblock(n_k, num_idxs_left, S_left, num_idxs_right, S_right) for
+                n_k in 0:maxnumber
+            ],
+        )
+
+        num_idxs_right = num_idxs_left
+        S_right = S_left
+    end
+    push!(A, [_MPSblock_end(n_k, num_idxs_right, S_right) for n_k in 0:maxnumber])
+
+    return A
+end
