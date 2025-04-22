@@ -9,4 +9,7 @@ include("hafnian.jl")
 # to be accessed from the outside is `MPS`, whose name is already exported by ITensorMPS.
 include("mps_construction.jl")
 
+export displace!
+include("sampling.jl")
+
 end # module GaussianBosonSamplingMPS
