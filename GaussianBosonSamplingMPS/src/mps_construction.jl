@@ -144,6 +144,27 @@ function _MPSblock_end(n_k, num_idxs_right, S_right)
     return m
 end
 
+function _fixed_width_rep(x, nd)
+    str = string(round(x; digits=nd))
+    len = length(str)
+    nspaces = 4
+    # 0.###### (nd digits after the zero) plus four spaces
+    return string(str, repeat(" ", nspaces + 2 + nd - len))
+end
+
+function _inspect_normal_mode_decomposition(evals, num_idxs, bond_idx, N, maxdim)
+    nd = 8
+    header_str =
+        "Decomposition of reduced state on modes $(bond_idx+1) ... $N" *
+        "\nFirst $maxdim eigenvalues and corresponding number states:\n"
+    table = [
+        string(_fixed_width_rep(l[1], nd), "\t", l[2]) for
+        l in first(zip(evals, num_idxs), maxdim)
+    ]
+    sum_evals_str = string("\nSum of discarded eigenvalues: ", 1 - sum(evals))
+    return header_str * join(table, "\n") * sum_evals_str
+end
+
 function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2)
     if !isapprox(purity(g), 1)
         error("the Gaussian state must be pure.")
@@ -151,6 +172,7 @@ function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2)
 
     N = nmodes(g)
     nm_evals_right, num_idxs_right, S_right = normal_mode_decomposition(g, N, maxnumber)
+    @debug _inspect_normal_mode_decomposition(nm_evals_right, num_idxs_right, 0, N, maxdim)
     # This is the normal-mode decomposition of a pure state, so we should find only one
     # eigenvalue, 1, corresponding to the vacuum.
     @assert length(nm_evals_right) == length(num_idxs_right) == 1
@@ -161,8 +183,13 @@ function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2)
 
     for bond_idx in 1:(N - 1)
         gpart = partialtrace(g, 1:bond_idx)
-        _, num_idxs_left, S_left = normal_mode_decomposition(gpart, nvals, maxnumber)
+        nm_evals_left, num_idxs_left, S_left = normal_mode_decomposition(
+            gpart, nvals, maxnumber
+        )
         # (We don't need the eigenvalues.)
+        @debug _inspect_normal_mode_decomposition(
+            nm_evals_left, num_idxs_left, bond_idx, N, maxdim
+        )
 
         # At step k we have the decompositions of [1 ... k] as "right" and
         # [k+1 ... N] as "left".
