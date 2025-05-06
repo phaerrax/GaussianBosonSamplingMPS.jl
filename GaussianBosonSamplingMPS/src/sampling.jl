@@ -8,7 +8,7 @@ end
 Apply a product of single-mode displacement operators on the state represented by the MPS
 `m`, with parameter `α[j]` on mode `j`.
 """
-function displace!(m::MPS, α::AbstractVector)
+function GaussianStates.displace!(m::MPS, α::AbstractVector)
     @assert length(m) == length(α)
     for i in eachindex(m)
         orthogonalize!(m, i)
