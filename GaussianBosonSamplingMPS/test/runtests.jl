@@ -40,46 +40,58 @@ end
         #   s(r e^(iθ)) = ────────  ∑ (-e^(iθ) tanh(r))ⁿ ────── |2n⟩
         #                 √cosh(r) n=0                    2ⁿn!
 
-        N = 4
-        maxn = 10
-        ζ = rand(ComplexF64, N)
-        g = vacuumstate(N)
-        squeeze!(g, ζ)
-        v = MPS(g, 2, maxn)  # maxdim=2 is more than enough, the MPS will have maxdim=1
-        sites = siteinds(v)
+        N = 2
+        maxn = 12
+        cutoff = 1e-12
+        r = atanh(cutoff^(1/maxn)) * rand(N)
+        θ = 2pi * rand(N)
+        z = r .* cis.(θ)
 
-        coefficients_expected = zeros(ComplexF64, N, maxn + 1)
-        for j in axes(coefficients_expected, 1)
-            for k in axes(coefficients_expected, 2)
-                if iseven(k - 1)
-                    n = div(k - 1, 2)
-                    coefficients_expected[j, k] =
-                        1 / sqrt(cosh(abs(ζ[j]))) *
-                        (-cis(angle(ζ[j])) * tanh(abs(ζ[j])))^n *
-                        sqrt(factorial(2n)) / (2^n * factorial(n))
-                end
+        g = vacuumstate(N)
+        squeeze!(g, z)
+        v = MPS(g, 4, maxn)  # the MPS will have maxdim=1 anyway
+        normalize!(v)
+        @test all(isone, linkdims(v))
+        @test sum(expect(v, "N")) ≈ number(g)
+
+        function coeff(x, m)
+            if isodd(m)
+                return 0
+            else
+                n = div(m, 2)
+                r, θ = abs(x), angle(x)
+                return (-cis(θ) * tanh(r))^n * sqrt(factorial(2n)) /
+                       (2^n * factorial(n) * sqrt(cosh(r)))
             end
         end
 
-        coefficients_mps = Matrix{ComplexF64}(undef, N, maxn + 1)
-        coefficients_mps[1, :] .= [
-            scalar(v[1] * onehot(linkind(v, 1) => 1) * onehot(siteind(v, 1) => n + 1)) for
-            n in 0:maxn
-        ]
-        for j in 2:(N - 1)
-            coefficients_mps[j, :] .= [
-                scalar(
-                    v[j] *
-                    onehot(linkind(v, j - 1) => 1) *
-                    onehot(linkind(v, j) => 1) *
-                    onehot(siteind(v, j) => n + 1),
-                ) for n in 0:maxn
-            ]
+        coefficients_expected = Matrix{ComplexF64}(undef, maxn+1, maxn + 1)
+        for n1 in 0:maxn
+            for n2 in 0:maxn
+                coefficients_expected[n1 + 1, n2 + 1] = coeff(z[1], n1) * coeff(z[2], n2)
+            end
         end
-        coefficients_mps[N, :] .= [
-            scalar(v[N] * onehot(linkind(v, N - 1) => 1) * onehot(siteind(v, N) => n + 1))
-            for n in 0:maxn
-        ]
-        @test coefficients_mps ≈ coefficients_expected
+
+        coefficients_mps = similar(coefficients_expected)
+        for n1 in 0:maxn
+            for n2 in 0:maxn
+                coefficients_mps[n1 + 1, n2 + 1]=dot(
+                    MPS(siteinds(v), [string(n1), string(n2)]), v
+                )
+            end
+        end
+
+        # Another check.
+        _, S = williamson(g.covariance_matrix)
+        coefficients_fc = similar(coefficients_expected)
+        for n1 in 0:maxn
+            for n2 in 0:maxn
+                coefficients_fc[n1 + 1, n2 + 1] = GaussianBosonSamplingMPS.franckcondon(
+                    [n1, n2], I(4), S, [0, 0]
+                )
+            end
+        end
+
+        @test coefficients_mps ≈ coefficients_expected ≈ coefficients_fc
     end
 end
