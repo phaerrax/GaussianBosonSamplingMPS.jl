@@ -94,4 +94,58 @@ end
 
         @test coefficients_mps ≈ coefficients_expected ≈ coefficients_fc
     end
+
+    @testset "Number basis coefficients of two-mode squeezed vacuum state" begin
+        # Build an MPS from a two-mode squeezed vacuum state and check that
+        # its coefficients in the eigenbasis of the number operator are as expected:
+        #
+        #                  +∞   (-e^(iθ) tanh(r))ⁿ
+        #   s₂(r e^(iθ)) =  ∑  ──────────────────── f(n)⊗f(n)
+        #                  n=0        cosh(r)
+
+        #                ↙ plus or minus here?? (Franck-Condon function says minus...)
+        coeff(r, θ, n) = (-cis(θ) * tanh(r))^n / cosh(r)
+        N = 8
+        # The singular values of the reduced state over one of the two modes are
+        # (tanh r)^2n / (cosh r)^2, so to get them all in the normal mode decomposition
+        # with a cutoff ε = 1e-12 we want an r such that (tanh r)^2n < ε ≤ (cosh r)^2 ε
+        # for all n ≤ N, i.e. r < artanh(ε^(1/2N)).
+        cutoff = 1e-12
+        r = atanh(cutoff^(1/N)) * rand()
+        θ = 2pi * rand()
+        g = vacuumstate(2)
+        squeeze2!(g, r*cis(θ), 1, 2)
+
+        v = MPS(g, N^2, N)
+        sites = siteinds(v)
+
+        coefficients_expected = Diagonal(coeff.(r, θ, 0:N))
+        # coefficients_expected[n, m] := ⟨f(n)⊗f(m), s₂(r e^(iθ))⟩ =
+        #
+        #                                 (-e^(iθ) tanh(r))ⁿ
+        #                              = ──────────────────── δₘₙ
+        #                                       cosh(r)
+        #
+
+        coefficients_mps = Matrix{ComplexF64}(undef, size(coefficients_expected))
+        for n in 0:N
+            for m in 0:N
+                coefficients_mps[n + 1, m + 1] = dot(MPS(sites, [string(n), string(m)]), v)
+            end
+        end
+
+        # Another check.
+        _, S = williamson(g.covariance_matrix)
+        coefficients_fc = Diagonal([
+            GaussianBosonSamplingMPS.franckcondon([n, n], I(4), S, [0, 0]) for n in 0:N
+        ])
+
+        # The MPS coefficients here get replaced by zero if their square
+        # would be less than the cutoff for the singular values.
+        replace!(x -> abs2(x) < cutoff ? zero(x) : x, coefficients_mps)
+        replace!(x -> abs2(x) < cutoff ? zero(x) : x, coefficients_expected)
+        replace!(x -> abs2(x) < cutoff ? zero(x) : x, coefficients_fc)
+        @test coefficients_mps ≈ coefficients_expected ≈ coefficients_fc
+        @test norm(v) ≈ 1
+    end
 end
