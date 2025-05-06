@@ -16,7 +16,7 @@ function hafnian(A)
     A = A * P
     comb = zeros(eltype(A), 2, n + 1)
     haf = 0
-    for m in 1:(2^n - 1)
+    for m in 1:(2 ^ n - 1)
         sieve = reverse(digits(m; base=2, pad=n)) .== 1
         P = kron(sieve, [1, 1])
         idx = findall(P .== 1)
@@ -66,7 +66,7 @@ function loophafnian(A)
     C = transpose(P * D)
     comb = zeros(eltype(A), 2, n + 1)
     lhaf = 0
-    for m in 1:(2^n - 1)
+    for m in 1:(2 ^ n - 1)
         sieve = reverse(digits(m; base=2, pad=n)) .== 1
         P = kron(sieve, [1, 1])
         idx = findall(P .== 1)

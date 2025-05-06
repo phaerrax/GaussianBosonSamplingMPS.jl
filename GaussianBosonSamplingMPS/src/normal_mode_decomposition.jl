@@ -67,11 +67,10 @@ function largest_normal_mode_eigenvalues(
 
             idx_above_threshold = reverse(idx_above_threshold[largest_evs_idxs])
 
-            num =
-                vcat.(
-                    num[div.(idx_above_threshold .- 1, maxnumber .+ 1) .+ 1],
-                    num0[mod.(idx_above_threshold .- 1, maxnumber .+ 1) .+ 1],
-                )
+            num = vcat.(
+                num[div.(idx_above_threshold .- 1, maxnumber .+ 1) .+ 1],
+                num0[mod.(idx_above_threshold .- 1, maxnumber .+ 1) .+ 1],
+            )
         end
 
         # Original code. Here we sort and keep the largest `maxdim` values, but this is

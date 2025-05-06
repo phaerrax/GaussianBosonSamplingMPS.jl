@@ -5,7 +5,10 @@ function twomodesqueezing(ζ, n, k1, k2)
     θ = angle(ζ)
     r = abs(ζ)
 
-    S = [[cos(θ) sin(θ)]; [sin(θ) -cos(θ)]]
+    S = [
+        cos(θ) sin(θ)
+        sin(θ) -cos(θ)
+    ]
     F[(2k1 - 1):(2k1), (2k1 - 1):(2k1)] .= cosh(r) .* I(2)
     F[(2k1 - 1):(2k1), (2k2 - 1):(2k2)] .= -sinh(r) .* S
     F[(2k2 - 1):(2k2), (2k1 - 1):(2k1)] .= -sinh(r) .* S
@@ -44,10 +47,10 @@ function franckcondon(m, α, Wl, Wr, n)
     L = length(m)
     @assert all(size(Wl) .== 2L .&& size(Wr) .== 2L)
 
-    # U(Wl)* U(Wr) = U(Wl⁻¹ Wr) = U(Ul * S * Ur) = U(Ul) U(S) U(Ur)
+    # U(Wl) U(Wr) = U(Wl Wr) = U(Ul * S * Ur) = U(Ul) U(S) U(Ur)
     # through the Euler decomposition.
     # Ul and Ur are orthogonal symplectic transformations, S is a diagonal squeezing matrix.
-    Ul, S, Ur = euler(inv(Wl) * Wr)
+    Ul, S, Ur = euler(Wl * Wr)
 
     Ulext = dirsum(Ul, I(2L))
     Urext = dirsum(Ur, I(2L))
@@ -73,7 +76,7 @@ function franckcondon(m, α, Wl, Wr, n)
         exp(-1 / 2 * (norm(αext)^2 - dot(αext, B, αext))) /
         sqrt(prod(@. factorial(p) * cosh(Λ)))
 
-    R = prod(@. cosh(t) / (tanh(t)^n))
+    R = prod(@. cosh(t) / (-tanh(t))^n)
     p_inds = unroll(p)
     Bp = B[p_inds, p_inds]
     ζp = ζ[p_inds]
@@ -90,10 +93,10 @@ function franckcondon(m, Wl, Wr, n)
     L = length(m)
     @assert all(size(Wl) .== 2L .&& size(Wr) .== 2L)
 
-    # U(Wl)* U(Wr) = U(Wl⁻¹ Wr) = U(Ul * S * Ur) = U(Ul) U(S) U(Ur)
+    # U(Wl) U(Wr) = U(Wl Wr) = U(Ul * S * Ur) = U(Ul) U(S) U(Ur)
     # through the Euler decomposition.
     # Ul and Ur are orthogonal symplectic transformations, S is a diagonal squeezing matrix.
-    Ul, S, Ur = euler(inv(Wl) * Wr)
+    Ul, S, Ur = euler(Wl * Wr)
 
     Ulext = dirsum(Ul, I(2L))
     Urext = dirsum(Ur, I(2L))
@@ -114,7 +117,7 @@ function franckcondon(m, Wl, Wr, n)
 
     B = uVl * Diagonal(tanh.(Λ)) * transpose(uVl)
     T = 1 / sqrt(prod(@. factorial(p) * cosh(Λ)))
-    R = prod(@. cosh(t) / (tanh(t)^n))
+    R = prod(@. cosh(t) / (-tanh(t))^n)
 
     p_inds = unroll(p)
     Bp = B[p_inds, p_inds]
