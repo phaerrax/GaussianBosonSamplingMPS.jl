@@ -144,13 +144,15 @@ function _inspect_normal_mode_decomposition(evals, num_idxs, bond_idx, N, maxdim
     return header_str * join(table, "\n") * sum_evals_str
 end
 
-function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2)
+function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2, kwargs...)
     if !isapprox(purity(g), 1)
         error("the Gaussian state must be pure.")
     end
 
     N = nmodes(g)
-    nm_evals_right, num_idxs_right, S_right = normal_mode_decomposition(g, N, maxnumber)
+    nm_evals_right, num_idxs_right, S_right = normal_mode_decomposition(
+        g, N, maxnumber; kwargs...
+    )
     @debug _inspect_normal_mode_decomposition(nm_evals_right, num_idxs_right, 0, N, maxdim)
     # This is the normal-mode decomposition of a pure state, so we should find only one
     # eigenvalue, 1, corresponding to the vacuum.
@@ -161,9 +163,10 @@ function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2)
     A = []  # array of MPS matrices
 
     for bond_idx in 1:(N - 1)
+        @debug "Computing block on mode $bond_idx"
         gpart = partialtrace(g, 1:bond_idx)
         nm_evals_left, num_idxs_left, S_left = normal_mode_decomposition(
-            gpart, nvals, maxnumber
+            gpart, nvals, maxnumber; kwargs...
         )
         # (We don't need the eigenvalues.)
         @debug _inspect_normal_mode_decomposition(
