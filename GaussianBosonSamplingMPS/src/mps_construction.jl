@@ -63,7 +63,7 @@ function franckcondon(m, α, Ul, S, Ur, n)
     B = uVl * Diagonal(tanh.(Λ)) * transpose(uVl)
     ζ = αext - B * conj(αext)
     T =
-        exp(-1 / 2 * (norm(αext)^2 - dot(αext, B, αext))) /
+        exp(-1 / 2 * (norm(αext)^2 - dot(αext, B, conj(αext)))) /
         sqrt(prod(@. factorial(p) * cosh(Λ)))
 
     R = prod(@. cosh(t) / (tanh(t))^n)
