@@ -10,8 +10,8 @@ function twomodesqueezing(ζ, n, k1, k2)
         sin(θ) -cos(θ)
     ]
     F[(2k1 - 1):(2k1), (2k1 - 1):(2k1)] .= cosh(r) .* I(2)
-    F[(2k1 - 1):(2k1), (2k2 - 1):(2k2)] .= -sinh(r) .* S
-    F[(2k2 - 1):(2k2), (2k1 - 1):(2k1)] .= -sinh(r) .* S
+    F[(2k1 - 1):(2k1), (2k2 - 1):(2k2)] .= sinh(r) .* S
+    F[(2k2 - 1):(2k2), (2k1 - 1):(2k1)] .= sinh(r) .* S
     F[(2k2 - 1):(2k2), (2k2 - 1):(2k2)] .= cosh(r) .* I(2)
     return F
 end
@@ -66,7 +66,7 @@ function franckcondon(m, α, Ul, S, Ur, n)
         exp(-1 / 2 * (norm(αext)^2 - dot(αext, B, αext))) /
         sqrt(prod(@. factorial(p) * cosh(Λ)))
 
-    R = prod(@. cosh(t) / (-tanh(t))^n)
+    R = prod(@. cosh(t) / (tanh(t))^n)
     p_inds = unroll(p)
     Bp = B[p_inds, p_inds]
     ζp = ζ[p_inds]
@@ -93,7 +93,7 @@ function franckcondon(m, Ul, S, Ur, n)
 
     B = uVl * Diagonal(tanh.(Λ)) * transpose(uVl)
     T = 1 / sqrt(prod(@. factorial(p) * cosh(Λ)))
-    R = prod(@. cosh(t) / (-tanh(t))^n)
+    R = prod(@. cosh(t) / (tanh(t))^n)
 
     p_inds = unroll(p)
     Bp = B[p_inds, p_inds]

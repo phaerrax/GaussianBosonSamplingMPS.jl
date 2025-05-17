@@ -180,6 +180,81 @@ squeezed2_state_coeff(x, n) = squeezed2_state_coeff(abs(x), angle(x), n)
         replace!(x -> abs2(x) < cutoff ? zero(x) : x, coefficients_fc)
         replace!(x -> abs2(x) < cutoff ? zero(x) : x, coefficients_mps)
         @test coefficients_mps ≈ coefficients_expected ≈ coefficients_fc
-        @test norm(v) ≈ 1
+        @test isapprox(sum(expect(v, "N")), number(g); rtol=rtol)
+    end
+
+    @testset "Several Gaussian operations on two modes (rtol = $rtol)" begin
+        # Let's operate on an initial vacuum state with a lot of Gaussian maps, trying out
+        # all the operations in GaussianStates, and see if the output MPS makes sense.
+        maxn = 12
+        maxdim = 10_000
+
+        cutoff = 1e-12
+        r = atanh(cutoff^(1/maxn)) * rand()
+        θ = 2pi * rand()
+        g = vacuumstate(2)
+        squeeze2!(g, r * cis(θ), 1, 2)
+        beamsplitter!(g, rand(), 1, 2)
+        phaseshift!(g, [2pi*rand(), 2pi*rand()])
+        squeeze!(g, [rand(ComplexF64) ./ 10, rand(ComplexF64) ./ 10])
+        beamsplitter!(g, rand(), 1, 2)
+        phaseshift!(g, [0, 2pi*rand()])
+
+        v = MPS(g, maxdim, maxn; lowerthreshold=1e-14)
+        sites = siteinds(v)
+
+        # Check.
+        coefficients_fc = Matrix{ComplexF64}(undef, maxn+1, maxn+1)
+        _, S = williamson(Symmetric(g.covariance_matrix))
+        for n1 in 0:maxn
+            for n2 in 0:maxn
+                coefficients_fc[n1 + 1, n2 + 1] = GaussianBosonSamplingMPS.franckcondon(
+                    [n1, n2], euler(S)..., [0, 0]
+                )
+            end
+        end
+
+        # The MPS coefficients here get replaced by zero if their square
+        # would be less than the cutoff for the singular values.
+        replace!(x -> abs2(x) < cutoff ? zero(x) : x, coefficients_fc)
+
+        @test norm(v) ≤ 1 || norm(v) ≈ 1
+
+        coefficients_mps = Matrix{ComplexF64}(undef, maxn+1, maxn+1)
+        for n in 0:maxn
+            for m in 0:maxn
+                coefficients_mps[n + 1, m + 1] = dot(MPS(sites, [string(n), string(m)]), v)
+            end
+        end
+        replace!(x -> abs2(x) < cutoff ? zero(x) : x, coefficients_mps)
+        normalize!(v)
+        @test isapprox(coefficients_mps, coefficients_fc; rtol=rtol)
+        @test isapprox(sum(expect(v, "N")), number(g); rtol=rtol)
+    end
+
+    @testset "Two-mode squeezing + beam splitter on three modes" begin
+        g = vacuumstate(3)
+
+        cutoff = 1e-12
+        maxn = 12
+        maxdim = 10_000
+        r = atanh(cutoff^(1/maxn)) * rand()
+        θ = 2pi * rand()
+        ζ = r * cis(θ)  # Squeeze parameter
+        squeeze2!(g, ζ, 1, 2)
+        s12 = GaussianStates._squeeze2matrix(ζ)
+
+        η = 0.5 * rand()  # BS transmittivity
+        beamsplitter!(g, η, 2, 3)
+        b23 = GaussianStates._beamsplittermatrix(η)
+
+        d, r = williamson(Symmetric(g.covariance_matrix))
+        @test d ≈ I
+        d23, r23 = williamson(Symmetric(partialtrace(g, 1).covariance_matrix))
+
+        v = MPS(g, maxdim, maxn)
+
+        @test norm(v) < 1 || norm(v) ≈ 1
+        @test number(g) ≈ sum(expect(v, "N"))
     end
 end
