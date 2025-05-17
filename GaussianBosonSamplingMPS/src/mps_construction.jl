@@ -23,48 +23,38 @@ unroll(p) = reduce(vcat, [repeat([i], p[i]) for i in eachindex(p)])
 dirsum(A, B) = [A zeros(size(A, 1), size(B, 2)); zeros(size(B, 1), size(A, 2)) B]
 
 """
-    franckcondon(m, α::AbstractVector, Wl::AbstractMatrix, Wr::AbstractMatrix, n)
+    franckcondon(m, α, Wl, S, Wr, n)
+    franckcondon(m, Wl, S, Wr, n)
 
-Compute the matrix element ``⟨m| D(α) U(Wl) U(Wr) |n⟩`` according to the algorithm
-presented in [1]. `Wl` and `Wr` are symplectic matrices while `α` is a complex vector.
+Compute the matrix element ``⟨m| D(α) U(Wl) U(S) U(Wr) |n⟩`` according to the algorithm
+presented in [1]. `Wl`, `S` and `Wr` are symplectic matrices, in particular `Wl` and `Wr`
+are also orthogonal, and `α` is a complex vector (which defaults to the zero vector).
 If ``N`` is the number of modes of the system, then
 
-- `m` and `n` are tuples of ``N`` natural numbers
-- `α` is a vector of ``N`` complex numbers
-- `Wl` and `Wr` are ``2N × 2N`` symplectic matrices
+- `m` and `n` are tuples of ``N`` natural numbers,
+- `α` is a vector of ``N`` complex numbers,
+- `Wl`, `S` and `Wr` are ``2N × 2N`` matrices.
 
 # References
 
 [1] Nicolás Quesada, ‘Franck-Condon factors by counting perfect matchings of graphs with
 loops’. [The Journal of Chemical Physics 150.16 (2019)](https://doi.org/10.1063/1.5086387).
 """
-function franckcondon(m, α, Wl, Wr, n)
-    # If N is the number of modes of the system:
-    # · m and n are tuples of N natural numbers
-    # · α is a vector of N complex numbers
-    # · Wl and Wr are 2N×2N symplectic matrices
-    @assert length(m) == length(n) == length(α)
+function franckcondon end
+
+function franckcondon(m, α, Ul, S, Ur, n)
     L = length(m)
-    @assert all(size(Wl) .== 2L .&& size(Wr) .== 2L)
-
-    # U(Wl) U(Wr) = U(Wl Wr) = U(Ul * S * Ur) = U(Ul) U(S) U(Ur)
-    # through the Euler decomposition.
-    # Ul and Ur are orthogonal symplectic transformations, S is a diagonal squeezing matrix.
-    Ul, S, Ur = euler(Wl * Wr)
-
-    Ulext = dirsum(Ul, I(2L))
-    Urext = dirsum(Ur, I(2L))
-    Sext = dirsum(S, I(2L))
+    @assert L == length(n) == length(α)
+    @assert all(size(Ul) .== 2L .&& size(Ur) .== 2L .&& size(S) .== 2L)
 
     t = @. asinh(sqrt(n))
     sq2m = prod(twomodesqueezing(t[k], 2L, k, L + k) for k in 1:L)
-    Vl, K, _ = euler(Ulext * Sext * Urext * sq2m)
+    Vl, K, _ = euler(dirsum(Ul * S * Ur, I(2L)) * sq2m)
     # Here `euler` gives us 4L × 4L real, symplectic matrices; we need complex, unitary
     # 2L × 2L matrices instead. Vl and Vr are orthogonal so there exists an unitary matrix
     # which is equivalent to them, and we extract it as follows (we only need Vl)
-    Vl_xxpp = GaussianStates.permute_to_xxpp(Vl)
-    uVl = complex.(Vl_xxpp[1:(2L), 1:(2L)], Vl_xxpp[(2L + 1):end, 1:(2L)])
-    Λ = log.(diag(GaussianStates.permute_to_xxpp(K))[1:(2L)])
+    uVl = GaussianStates.symplectic_to_unitary(GaussianStates.permute_to_xxpp(Vl))
+    Λ = log.(diag(K)[1:2:end])
     @assert uVl * uVl' ≈ I
 
     p = [m; n]
@@ -84,33 +74,19 @@ function franckcondon(m, α, Wl, Wr, n)
     return R * T * lhf
 end
 
-function franckcondon(m, Wl, Wr, n)
-    # If N is the number of modes of the system:
-    # · m and n are tuples of N natural numbers
-    # · α is a vector of N complex numbers
-    # · Wl and Wr are 2N×2N symplectic matrices
-    @assert length(m) == length(n)
+function franckcondon(m, Ul, S, Ur, n)
     L = length(m)
-    @assert all(size(Wl) .== 2L .&& size(Wr) .== 2L)
-
-    # U(Wl) U(Wr) = U(Wl Wr) = U(Ul * S * Ur) = U(Ul) U(S) U(Ur)
-    # through the Euler decomposition.
-    # Ul and Ur are orthogonal symplectic transformations, S is a diagonal squeezing matrix.
-    Ul, S, Ur = euler(Wl * Wr)
-
-    Ulext = dirsum(Ul, I(2L))
-    Urext = dirsum(Ur, I(2L))
-    Sext = dirsum(S, I(2L))
+    @assert L == length(n)
+    @assert all(size(Ul) .== 2L .&& size(Ur) .== 2L .&& size(S) .== 2L)
 
     t = @. asinh(sqrt(n))
     sq2m = prod(twomodesqueezing(t[k], 2L, k, L + k) for k in 1:L)
-    Vl, K, _ = euler(Ulext * Sext * Urext * sq2m)
+    Vl, K, Vr = euler(dirsum(Ul * S * Ur, I(2L)) * sq2m)
     # Here `euler` gives us 4L × 4L real, symplectic matrices; we need complex, unitary
     # 2L × 2L matrices instead. Vl and Vr are orthogonal so there exists an unitary matrix
     # which is equivalent to them, and we extract it as follows (we only need Vl)
-    Vl_xxpp = GaussianStates.permute_to_xxpp(Vl)
-    uVl = complex.(Vl_xxpp[1:(2L), 1:(2L)], Vl_xxpp[(2L + 1):end, 1:(2L)])
-    Λ = log.(diag(GaussianStates.permute_to_xxpp(K))[1:(2L)])
+    uVl = GaussianStates.symplectic_to_unitary(GaussianStates.permute_to_xxpp(Vl))
+    Λ = log.(diag(K)[1:2:end])
     @assert uVl * uVl' ≈ I
 
     p = [m; n]
@@ -121,28 +97,28 @@ function franckcondon(m, Wl, Wr, n)
 
     p_inds = unroll(p)
     Bp = B[p_inds, p_inds]
-    hf = hafnian(Bp .- Diagonal(Bp))
+    hf = hafnian(Bp - Diagonal(Bp))
     return R * T * hf
 end
 
-function _MPSblock(n_k, num_idxs_left, S_left, num_idxs_right, S_right)
+function _MPSblock(n_k, num_idxs_left, U_left, num_idxs_right, U_right)
     m = Matrix{ComplexF64}(undef, length(num_idxs_right), length(num_idxs_left))
+    Ul, S, Ur = euler(dirsum(I(2), inv(U_left)) * U_right)
     for i in axes(m, 1)
         for j in axes(m, 2)
-            m[i, j] = franckcondon(
-                [n_k; num_idxs_left[j]], dirsum(I(2), S_left), S_right, num_idxs_right[i]
-            )
+            m[i, j] = franckcondon([n_k; num_idxs_left[j]], Ul, S, Ur, num_idxs_right[i])
         end
     end
     return m
 end
 
-function _MPSblock_end(n_k, num_idxs_right, S_right)
+function _MPSblock_end(n_k, num_idxs_right, U_right)
     # Dedicated function for the last site (we can't use _MPSblock) with "empty" `S_left`
     # and `num_idxs_left` otherwise we'd get a 0xN matrix since `length(num_idxs_left) == 0`
     m = Matrix{ComplexF64}(undef, length(num_idxs_right), 1)
+    Ul, S, Ur = euler(U_right)
     for i in axes(m, 1)
-        m[i, 1] = franckcondon([n_k], I(2), S_right, num_idxs_right[i])
+        m[i, 1] = franckcondon([n_k], Ul, S, Ur, num_idxs_right[i])
     end
     return m
 end
