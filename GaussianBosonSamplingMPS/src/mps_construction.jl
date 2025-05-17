@@ -230,7 +230,7 @@ function ITensorMPS.MPS(g::GaussianState, maxdim, maxnumber; kwargs...)
     l = [Index(linds_dim[i], "Link,l=$i") for i in 1:(N - 1)]
     v[1] = ITensor(blocks[1], sites[1], l[1])
     for i in 2:(N - 1)
-        v[i] = ITensor(blocks[i], sites[i], l[i], dag(l[i - 1]))
+        v[i] = ITensor(blocks[i], sites[i], dag(l[i - 1]), l[i])
     end
     v[N] = ITensor(blocks[N], sites[N], dag(l[N - 1]))
     return MPS(v)
