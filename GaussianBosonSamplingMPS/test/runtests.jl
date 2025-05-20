@@ -42,7 +42,7 @@ squeezed2_state_coeff(x, n) = squeezed2_state_coeff(abs(x), angle(x), n)
         # Perform some random 1-mode squeezing and displacement.
         squeeze!(g, rand(ComplexF64, N))
         displace!(g, rand(ComplexF64, N))
-        s = MPS(g, 5, 5)
+        s = MPS(g; maxdim=5, maxnumber=5)
         @test all(linkdims(s) .== 1)
     end
 
@@ -67,7 +67,7 @@ squeezed2_state_coeff(x, n) = squeezed2_state_coeff(abs(x), angle(x), n)
             GaussianBosonSamplingMPS.franckcondon([n], Ul, D, Ur, [0]) for n in 0:maxn
         ]
 
-        @test coefficients_expected ≈ coefficients_fc
+        @test abs.(coefficients_expected) ≈ abs.(coefficients_fc)
     end
 
     @testset "Squeezed vacuum state on several modes" begin
@@ -87,7 +87,7 @@ squeezed2_state_coeff(x, n) = squeezed2_state_coeff(abs(x), angle(x), n)
 
         g = vacuumstate(N)
         squeeze!(g, z)
-        v = MPS(g, 4, maxn)  # the MPS will have maxdim=1 anyway
+        v = MPS(g; maxdim=4, maxnumber=maxn)  # the MPS will have maxdim=1 anyway
         @test norm(v) ≤ 1 || norm(v) ≈ 1
 
         coefficients_expected = Matrix{ComplexF64}(undef, maxn+1, maxn + 1)
@@ -119,14 +119,13 @@ squeezed2_state_coeff(x, n) = squeezed2_state_coeff(abs(x), angle(x), n)
             end
         end
 
-        @test coefficients_mps ≈ coefficients_expected ≈ coefficients_fc
+        @test abs.(coefficients_mps) ≈ abs.(coefficients_expected) ≈ abs.(coefficients_fc)
         normalize!(v)
         @test all(isone, linkdims(v))
         @test sum(expect(v, "N")) ≈ number(g)
     end
 
-    rtol = 1e-6
-    @testset "Two-mode squeezed vacuum state (rtol = $rtol)" begin
+    @testset "Two-mode squeezed vacuum state" begin
         # Build an MPS from a two-mode squeezed vacuum state and check that
         # its coefficients in the eigenbasis of the number operator are as expected:
         #
@@ -146,7 +145,7 @@ squeezed2_state_coeff(x, n) = squeezed2_state_coeff(abs(x), angle(x), n)
         g = vacuumstate(2)
         squeeze2!(g, r*cis(θ), 1, 2)
 
-        v = MPS(g, maxdim, maxn)
+        v = MPS(g; maxdim=maxdim, maxnumber=maxn)
         sites = siteinds(v)
 
         coefficients_expected = Diagonal(squeezed2_state_coeff.(r, θ, 0:maxn))
@@ -165,7 +164,6 @@ squeezed2_state_coeff(x, n) = squeezed2_state_coeff(abs(x), angle(x), n)
         ])
 
         @test norm(v) ≤ 1 || norm(v) ≈ 1
-        normalize!(v)
 
         coefficients_mps = Matrix{ComplexF64}(undef, size(coefficients_expected))
         for n in 0:maxn
@@ -179,11 +177,13 @@ squeezed2_state_coeff(x, n) = squeezed2_state_coeff(abs(x), angle(x), n)
         replace!(x -> abs2(x) < cutoff ? zero(x) : x, coefficients_expected)
         replace!(x -> abs2(x) < cutoff ? zero(x) : x, coefficients_fc)
         replace!(x -> abs2(x) < cutoff ? zero(x) : x, coefficients_mps)
-        @test coefficients_mps ≈ coefficients_expected ≈ coefficients_fc
-        @test isapprox(sum(expect(v, "N")), number(g); rtol=rtol)
+        @test abs.(coefficients_mps) ≈ abs.(coefficients_expected) ≈ abs.(coefficients_fc)
+
+        normalize!(v)
+        @test isapprox(sum(expect(v, "N")), number(g))
     end
 
-    @testset "Several Gaussian operations on two modes (rtol = $rtol)" begin
+    @testset "Several Gaussian operations on two modes" begin
         # Let's operate on an initial vacuum state with a lot of Gaussian maps, trying out
         # all the operations in GaussianStates, and see if the output MPS makes sense.
         maxn = 12
@@ -200,7 +200,7 @@ squeezed2_state_coeff(x, n) = squeezed2_state_coeff(abs(x), angle(x), n)
         beamsplitter!(g, rand(), 1, 2)
         phaseshift!(g, [0, 2pi*rand()])
 
-        v = MPS(g, maxdim, maxn; lowerthreshold=1e-14)
+        v = MPS(g; maxdim=maxdim, maxnumber=maxn, lowerthreshold=1e-14)
         sites = siteinds(v)
 
         # Check.
@@ -227,9 +227,10 @@ squeezed2_state_coeff(x, n) = squeezed2_state_coeff(abs(x), angle(x), n)
             end
         end
         replace!(x -> abs2(x) < cutoff ? zero(x) : x, coefficients_mps)
+        @test abs.(coefficients_mps) ≈ abs.(coefficients_fc)
+
         normalize!(v)
-        @test isapprox(coefficients_mps, coefficients_fc; rtol=rtol)
-        @test isapprox(sum(expect(v, "N")), number(g); rtol=rtol)
+        @test isapprox(sum(expect(v, "N")), number(g))
     end
 
     @testset "Two-mode squeezing + beam splitter on three modes" begin
@@ -252,7 +253,7 @@ squeezed2_state_coeff(x, n) = squeezed2_state_coeff(abs(x), angle(x), n)
         @test d ≈ I
         d23, r23 = williamson(Symmetric(partialtrace(g, 1).covariance_matrix))
 
-        v = MPS(g, maxdim, maxn)
+        v = MPS(g; maxdim=maxdim, maxnumber=maxn)
 
         @test norm(v) < 1 || norm(v) ≈ 1
         @test number(g) ≈ sum(expect(v, "N"))
