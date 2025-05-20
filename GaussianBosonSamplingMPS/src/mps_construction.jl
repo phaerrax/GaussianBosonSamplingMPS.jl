@@ -200,12 +200,12 @@ function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2, kw
 end
 
 """
-    MPS(g::GaussianState, maxdim, maxnumber; kwargs...)
+    MPS(g::GaussianState; maxdim, maxnumber, kwargs...)
 
 Build an MPS representation of the Gaussian state `g` with bond dimension up to `maxdim`,
 truncating the Fock space of each mode at the `maxnumber`-particle sector.
 """
-function ITensorMPS.MPS(g::GaussianState, maxdim, maxnumber; kwargs...)
+function ITensorMPS.MPS(g::GaussianState; maxdim, maxnumber, kwargs...)
     N = nmodes(g)
     blocks = mps_matrices(g, maxdim, maxnumber; kwargs...)
 
