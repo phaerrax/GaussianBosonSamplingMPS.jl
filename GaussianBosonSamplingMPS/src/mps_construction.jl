@@ -1,6 +1,6 @@
-function twomodesqueezing(ζ, n, k1, k2)
+function twomodesqueezing(::Type{T}, ζ, n, k1, k2) where {T<:Number}
     @assert 1 ≤ k1 ≤ n && 1 ≤ k2 ≤ n
-    F = Matrix{Float64}(I, 2n, 2n)
+    F = Matrix{T}(I, 2n, 2n)
 
     θ = angle(ζ)
     r = abs(ζ)
@@ -15,6 +15,8 @@ function twomodesqueezing(ζ, n, k1, k2)
     F[(2k2 - 1):(2k2), (2k2 - 1):(2k2)] .= cosh(r) .* I(2)
     return F
 end
+
+twomodesqueezing(ζ, n, k1, k2) = twomodesqueezing(Float64, ζ, n, k1, k2)
 
 # Eq. (65)-(66) in [1]
 # Construct the B(p) matrix with B[unroll(p), unroll(p)]
@@ -101,8 +103,10 @@ function franckcondon(m, Ul, S, Ur, n)
     return R * T * hf
 end
 
-function _MPSblock(n_k, num_idxs_left, U_left, num_idxs_right, U_right)
-    m = Matrix{ComplexF64}(undef, length(num_idxs_right), length(num_idxs_left))
+function _MPSblock(
+    ::Type{T}, n_k, num_idxs_left, U_left, num_idxs_right, U_right
+) where {T<:Number}
+    m = Matrix{T}(undef, length(num_idxs_right), length(num_idxs_left))
     Ul, S, Ur = euler(dirsum(I(2), inv(U_left)) * U_right)
     for i in axes(m, 1)
         for j in axes(m, 2)
@@ -112,15 +116,23 @@ function _MPSblock(n_k, num_idxs_left, U_left, num_idxs_right, U_right)
     return m
 end
 
-function _MPSblock_end(n_k, num_idxs_right, U_right)
+function _MPSblock_end(::Type{T}, n_k, num_idxs_right, U_right) where {T<:Number}
     # Dedicated function for the last site (we can't use _MPSblock) with "empty" `S_left`
     # and `num_idxs_left` otherwise we'd get a 0xN matrix since `length(num_idxs_left) == 0`
-    m = Matrix{ComplexF64}(undef, length(num_idxs_right), 1)
+    m = Matrix{T}(undef, length(num_idxs_right), 1)
     Ul, S, Ur = euler(U_right)
     for i in axes(m, 1)
         m[i, 1] = franckcondon([n_k], Ul, S, Ur, num_idxs_right[i])
     end
     return m
+end
+
+function _MPSblock(n_k, num_idxs_left, U_left, num_idxs_right, U_right)
+    _MPSblock(ComplexF64, n_k, num_idxs_left, U_left, num_idxs_right, U_right)
+end
+
+function _MPSblock_end(n_k, num_idxs_right, U_right)
+    _MPSblock_end(ComplexF64, n_k, num_idxs_right, U_right)
 end
 
 function _fixed_width_rep(x, nd)
@@ -145,6 +157,7 @@ function _inspect_normal_mode_decomposition(evals, num_idxs, bond_idx, N, maxdim
 end
 
 function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2, kwargs...)
+    T = complex(eltype(g))
     if !isapprox(purity(g), 1)
         error("the Gaussian state must be pure.")
     end
@@ -176,9 +189,7 @@ function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2, kw
         # At step k we have the decompositions of [1 ... k] as "right" and
         # [k+1 ... N] as "left".
         num_idxs_left = first(num_idxs_left, maxdim)
-        t = Array{ComplexF64}(
-            undef, maxnumber + 1, length(num_idxs_right), length(num_idxs_left)
-        )
+        t = Array{T}(undef, maxnumber + 1, length(num_idxs_right), length(num_idxs_left))
         for n_k in 0:maxnumber
             t[n_k + 1, :, :] .= _MPSblock(
                 n_k, num_idxs_left, S_left, num_idxs_right, S_right
@@ -190,9 +201,9 @@ function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2, kw
         S_right = S_left
     end
 
-    t = Array{ComplexF64}(undef, maxnumber + 1, length(num_idxs_right), 1)
+    t = Array{T}(undef, maxnumber + 1, length(num_idxs_right), 1)
     for n_k in 0:maxnumber
-        t[n_k + 1, :, 1] .= _MPSblock_end(n_k, num_idxs_right, S_right)
+        t[n_k + 1, :, 1] .= _MPSblock_end(T, n_k, num_idxs_right, S_right)
     end
     push!(A, t)
 

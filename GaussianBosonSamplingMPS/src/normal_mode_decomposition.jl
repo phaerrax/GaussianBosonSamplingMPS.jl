@@ -54,7 +54,9 @@ function largest_normal_mode_eigenvalues(
     else
         for i in 2:length(symplectic_eigenvalues)
             next_sequence = normal_mode_eigenvalue.(symplectic_eigenvalues[i], 0:maxnumber)
-            evs_product = Vector{Float64}(undef, length(evs) * length(next_sequence))
+            evs_product = Vector{eltype(symplectic_eigenvalues)}(
+                undef, length(evs) * length(next_sequence)
+            )
             for n in eachindex(evs), m in eachindex(next_sequence)
                 evs_product[(n - 1) * length(next_sequence) + m] = evs[n] * next_sequence[m]
             end
