@@ -83,6 +83,35 @@ function measure(v::AbstractMPS, ls::Vector{LocalOperator})
     return results
 end
 
+function measure(v::AbstractMPS, ls::Matrix{LocalOperator})
+    @assert iseven(length(v))
+    nmodes = div(length(v), 2)
+
+    sb_id_blocks = _id_pairs(v)
+    ids = _id_contractions(v)
+
+    results = Matrix{ComplexF64}(undef, size(ls))
+    for (j, l) in enumerate(ls)
+        x = OneITensor()
+        for n in sb_index.(1:nmodes)
+            if n in domain(l)
+                lop = if n + 1 in domain(l)
+                    # We loop over odd sites only, so we check manually that the next site
+                    # is in the domain of the operator.
+                    op(l[n], siteind(v, n)) * op(l[n + 1], siteind(v, n + 1))
+                else
+                    op(l[n], siteind(v, n))
+                end
+                x *= dag(apply(adj(lop), sb_id_blocks[inv_sb_index(n)])) * v[n] * v[n + 1]
+            else
+                x *= ids[inv_sb_index(n)]
+            end
+        end
+        results[j] = scalar(x)
+    end
+    return results
+end
+
 function sb_siteinds(; nmodes, maxnumber)
     sites_phy = siteinds("Boson", nmodes; dim=maxnumber+1, addtags="phy")
     sites_anc = siteinds("Boson", nmodes; dim=maxnumber+1, addtags="anc")
