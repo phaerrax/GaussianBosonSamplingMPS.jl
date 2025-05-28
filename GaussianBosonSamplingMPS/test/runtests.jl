@@ -307,10 +307,37 @@ end
         v_post = attenuate(v, attenuationrate, 1)
         n_post = real(measure(v_post, N))
         @test n_post ≈ sum(
-            n * binomial(n_init, n) *
+            n *
+            binomial(n_init, n) *
             (1 - attenuationrate^2)^(n_init - n) *
-            attenuationrate^(2n)
-            for n in 0:n_init
+            attenuationrate^(2n) for n in 0:n_init
         )
+    end
+
+    @testset "Squeeze operators" begin
+        nmodes = 3
+        maxnumber = 10
+        maxdim = 10
+
+        sites = sb_siteinds(; nmodes=nmodes, maxnumber=maxnumber)
+        N = [
+            LocalOperator(sb_index(1) => "n")
+            LocalOperator(sb_index(2) => "n")
+            LocalOperator(sb_index(3) => "n")
+        ]
+
+        v = MPS(sites, "0")
+        n_pre = measure(v, N)
+        @test iszero(sum(n_pre))
+
+        # As always, we need to keep abs(z) low if we don't want to run into trouble with
+        # the truncation of the local Hilbert spaces.
+        z = rand(3) ./ 10 .* cispi.(2 .* rand(3))
+        w = squeeze(squeeze(v, 1, z[1]), 1, -z[1])
+        @test w ≈ v
+
+        w = squeeze(v, z)
+        n_post = measure(w, N)
+        @test sum(n_post) ≈ sum(@. sinh(abs(z))^2)
     end
 end
