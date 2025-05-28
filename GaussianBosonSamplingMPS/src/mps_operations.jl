@@ -1,3 +1,76 @@
+# First and second moments of states from their MPS
+
+function ITensors.op(::OpName"x", st::SiteType"Boson", d::Int)
+    return (op(OpName("a†"), st, d) + op(OpName("a"), st, d)) / sqrt(2)
+end
+
+function ITensors.op(::OpName"p", st::SiteType"Boson", d::Int)
+    return (op(OpName("a†"), st, d) - op(OpName("a"), st, d)) * im / sqrt(2)
+end
+
+function ITensors.op(::OpName"x²", st::SiteType"Boson", d::Int)
+    return op(OpName("x"), st, d)^2
+end
+
+function ITensors.op(::OpName"p²", st::SiteType"Boson", d::Int)
+    return op(OpName("p"), st, d)^2
+end
+
+function ITensors.op(::OpName"xp", st::SiteType"Boson", d::Int)
+    return op(OpName("x"), st, d) * op(OpName("p"), st, d)
+end
+
+function ITensors.op(::OpName"px", st::SiteType"Boson", d::Int)
+    return op(OpName("p"), st, d) * op(OpName("x"), st, d)
+end
+
+function firstmoments(v)
+    @assert iseven(length(v))
+    nmodes = div(length(v), 2)
+
+    X = [LocalOperator(sb_index(j) => "x") for j in 1:nmodes]
+    P = [LocalOperator(sb_index(j) => "p") for j in 1:nmodes]
+    Ri = collect(Iterators.flatten(zip(X, P)))  # [X[1], P[1], X[2], P[2], ...]
+    r = measure(v, Ri)
+
+    if !isapprox(real(r), r)
+        @warn "first moments are not real"
+    end
+    return real(r)
+end
+
+function covariancematrix(v)
+    @assert iseven(length(v))
+    nmodes = div(length(v), 2)
+
+    r = firstmoments(v)
+
+    Rij = Matrix{LocalOperator}(undef, 2nmodes, 2nmodes)
+    for i in 1:nmodes
+        Rij[2i - 1, 2i - 1] = LocalOperator(sb_index(i) => "x²")
+        Rij[2i - 1, 2i] = LocalOperator(sb_index(i) => "xp")
+        Rij[2i, 2i - 1] = LocalOperator(sb_index(i) => "px")
+        Rij[2i, 2i] = LocalOperator(sb_index(i) => "p²")
+    end
+
+    for i in 1:nmodes, j in 1:nmodes
+        if i != j
+            Rij[2i - 1, 2j - 1] = LocalOperator((sb_index(i) => "x", sb_index(j) => "x"))
+            Rij[2i - 1, 2j] = LocalOperator((sb_index(i) => "x", sb_index(j) => "p"))
+            Rij[2i, 2j - 1] = LocalOperator((sb_index(i) => "p", sb_index(j) => "x"))
+            Rij[2i, 2j] = LocalOperator((sb_index(i) => "p", sb_index(j) => "p"))
+        end
+    end
+
+    pre_σ = measure(v, Rij)  # this is tr(ρ RᵢRⱼ)
+    σ = pre_σ .+ transpose(pre_σ) .- 2r * transpose(r)
+
+    if !isapprox(real(σ), σ)
+        @warn "covariance matrix is not real"
+    end
+    return real(σ)
+end
+
 # Attenuator channel
 
 function _attenuatormatrixcoefficient(attenuation, k, n, m)
