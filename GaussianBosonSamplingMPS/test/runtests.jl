@@ -340,4 +340,47 @@ end
         n_post = measure(w, N)
         @test sum(n_post) ≈ sum(@. sinh(abs(z))^2)
     end
+
+    @testset "Beam splitter operators" begin
+        nmodes = 3
+        maxnumber = 10
+
+        sites = sb_siteinds(; nmodes=nmodes, maxnumber=maxnumber)
+        N = [
+            LocalOperator(sb_index(1) => "n")
+            LocalOperator(sb_index(2) => "n")
+            LocalOperator(sb_index(3) => "n")
+        ]
+
+        v = MPS(sites, ["1", "1", "0", "0", "0", "0"])
+        n_pre = measure(v, N)
+        @test sum(n_pre) == 1
+
+        w = beamsplitter(v, cospi(1/4), 1, 3)
+        n_post = measure(w, N)
+        @test sum(n_post) ≈ sum(n_pre)
+
+        ρ_vacuum = MPS(sites, "0")
+        w_expected =
+            1/2 * add(
+                apply(
+                    op("a†", sites, sb_index(1)) * conj(op("a†", sites, sb_index(1)+1)),
+                    ρ_vacuum,
+                ),
+                apply(
+                    op("a†", sites, sb_index(3)) * conj(op("a†", sites, sb_index(3)+1)),
+                    ρ_vacuum,
+                ),
+                apply(
+                    op("a†", sites, sb_index(3)) * conj(op("a†", sites, sb_index(1)+1)),
+                    ρ_vacuum,
+                ),
+                apply(
+                    op("a†", sites, sb_index(1)) * conj(op("a†", sites, sb_index(3)+1)),
+                    ρ_vacuum,
+                );
+                alg="directsum",
+            )
+        @test w_expected ≈ w
+    end
 end

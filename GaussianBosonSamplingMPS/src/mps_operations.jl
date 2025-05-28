@@ -67,3 +67,24 @@ function GaussianStates.squeeze(v::MPS, z::AbstractVector; kwargs...)
 
     return v
 end
+
+function ITensors.op(
+    ::OpName"beamsplitter", st::SiteType"Boson", d1::Int, d2::Int; transmittivity
+)
+    θ = acos(transmittivity)
+    b = op(OpName("ab†"), st, d1, d2) - op(OpName("a†b"), st, d1, d2)
+    return exp(θ * b)
+end
+
+function GaussianStates.beamsplitter(v::MPS, transmittivity, n1, n2; kwargs...)
+    phy1, anc1 = siteind(v, sb_index(n1)), siteind(v, sb_index(n1)+1)
+    phy2, anc2 = siteind(v, sb_index(n2)), siteind(v, sb_index(n2)+1)
+
+    bs_phy = op("beamsplitter", phy1, phy2; transmittivity=transmittivity)
+    bs_anc = op("beamsplitter", anc1, anc2; transmittivity=transmittivity)
+
+    v = apply(bs_phy, v; kwargs...)
+    # `apply` already moves the sites so that they are adjacent before actually applying
+    # the two-site operator, then it moves them back to their original position.
+    return apply(conj(bs_anc), v; kwargs...)
+end
