@@ -15,7 +15,7 @@ include("sampling.jl")
 export measure, sb_siteinds, sb_index, inv_sb_index, sb_outer
 include("superbosons.jl")
 
-export attenuate, firstmoments, covariancematrix
+export attenuate, firstmoments, covariancematrix, displace_pure
 include("mps_operations.jl")
 
 end # module GaussianBosonSamplingMPS

@@ -165,3 +165,46 @@ function GaussianStates.beamsplitter(v::MPS, transmittivity, n1, n2; kwargs...)
     # the two-site operator, then it moves them back to their original position.
     return apply(conj(bs_anc), v; kwargs...)
 end
+
+# Displacement
+
+function ITensors.op(::OpName"displace", st::SiteType"Boson", d::Int; α)
+    return exp(α * op(OpName("a†"), st, d) - conj(α) * op(OpName("a"), st, d))
+end
+
+"""
+    displace_pure(m::MPS, α::AbstractVector; kwargs...)
+
+Apply a product of single-mode displacement operators on the pure state represented by the
+MPS `m`, with parameter `α[j]` on mode `j`.
+"""
+function displace_pure(m::MPS, α::AbstractVector; kwargs...)
+    @assert length(m) == length(α)
+    displacement_ops = [op("displace", siteind(m, j); α=α[j]) for j in eachindex(m)]
+    return apply(displacement_ops, m; kwargs...)
+end
+
+"""
+    displace(v::MPS, α::AbstractVector; kwargs...)
+
+Apply a product of single-mode displacement operators, with parameter `α[j]` on mode `j`,
+on the mixed state represented by the MPS `m` in the superboson formalism.
+"""
+function GaussianStates.displace(v::MPS, α::AbstractVector; kwargs...)
+    @assert iseven(length(v))
+    nmodes = div(length(v), 2)
+    @assert nmodes == length(α)
+
+    displacement_ops = ITensor[]
+    for j in 1:nmodes
+        append!(
+            displacement_ops,
+            [
+                op("displace", siteind(v, sb_index(j)); α=α[j]),
+                conj(op("displace", siteind(v, sb_index(j)+1); α=α[j])),
+            ],
+        )
+    end
+
+    return apply(displacement_ops, v; kwargs...)
+end

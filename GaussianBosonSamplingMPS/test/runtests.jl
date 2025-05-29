@@ -383,6 +383,35 @@ end
             )
         @test w_expected ≈ w
     end
+
+    @testset "Displacement operators" begin
+        nmodes = 3
+        maxnumber = 10
+
+        # With superboson states
+        sites = sb_siteinds(; nmodes=nmodes, maxnumber=maxnumber)
+        N = [LocalOperator(sb_index(j) => "n") for j in 1:nmodes]
+
+        v = MPS(sites, "0")
+        n_pre = measure(v, N)
+        @test sum(n_pre) == 0
+
+        α = rand(ComplexF64, nmodes) ./ 10
+        w = displace(v, α)
+        n_post = measure(w, N)
+        @test sum(n_post) ≈ norm(α)^2
+
+        # With standard pure states
+        sites = siteinds("Boson", nmodes; dim=maxnumber+1)
+        v = MPS(sites, "0")
+        n_pre = expect(v, "n")
+        @test sum(n_pre) == 0
+
+        α = rand(ComplexF64, nmodes) ./ 10
+        w = displace_pure(v, α)
+        n_post = expect(w, "n")
+        @test sum(n_post) ≈ norm(α)^2
+    end
 end
 
 @testset "First and second moments from MPS" begin
