@@ -12,7 +12,7 @@ include("mps_construction.jl")
 export displace!
 include("sampling.jl")
 
-export measure, sb_siteinds, sb_index, inv_sb_index
+export measure, sb_siteinds, sb_index, inv_sb_index, sb_outer
 include("superbosons.jl")
 
 export attenuate, firstmoments, covariancematrix
