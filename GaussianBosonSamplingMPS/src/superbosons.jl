@@ -1,5 +1,6 @@
 using MPSTimeEvolution: LocalOperator, domain
 using ITensors: OneITensor
+using Random
 
 sb_index(n) = 2n - 1  # mode number --> MPS site
 inv_sb_index(n) = div(n + 1, 2)  # MPS site --> mode number
@@ -110,6 +111,11 @@ function measure(v::AbstractMPS, ls::Matrix{LocalOperator})
         results[j] = scalar(x)
     end
     return results
+end
+
+function sb_trace(v::MPS)
+    @assert iseven(length(v))
+    return scalar(prod(_id_contractions(v)))
 end
 
 function sb_siteinds(; nmodes, maxnumber)
@@ -241,4 +247,79 @@ function sb_outer(v)
     end
 
     return vv
+end
+
+"""
+    sb_sample(m::MPS)
+
+Given a "superbosonic" MPS `m` with unit trace, compute a `Vector{Int}` of `length(m)/2`
+elements corresponding to one sample of the probability distribution defined by the
+components of the density matrix that the MPS represents.
+"""
+function sb_sample(m::MPS)
+    return sb_sample(Random.default_rng(), m)
+end
+
+"""
+    randsample(values, weights)
+
+Draw an element from `values`, such that `values[i]` has weight `weights[i]`.
+"""
+function randsample(values, weights)
+    odds = cumsum(weights ./ sum(weights))
+    return values[findfirst(odds .≥ rand())]
+end
+
+function sb_sample(rng::AbstractRNG, m::MPS)
+    # See https://tensornetwork.org/mps/algorithms/sampling for an explanation of this MPS
+    # sampling algorithm.
+    @assert iseven(length(m))
+    nmodes = div(length(m), 2)
+
+    trace = sb_trace(m)
+    if abs(1.0 - trace) > 1E-8
+        error("sample: MPS is not normalized, trace=$trace")
+    end
+
+    ids = _id_contractions(m)
+    contractions_from_right = Vector{Union{ITensor,OneITensor}}(undef, nmodes)
+    # We want:
+    #   contractions_from_right[end] = 1
+    #   contractions_from_right[end-1] = ids[end]
+    #   contractions_from_right[end-2] = contractions_from_right[end-1] * ids[end-1]
+    #   contractions_from_right[end-3] = contractions_from_right[end-2] * ids[end-2]
+    # and so on...
+    # The first element contractions_from_right[1] will be the MPS `m` contracted on all
+    # pairs of sites but the first one, i.e. ids[2] * ids[3] * ... * ids[end].
+    contractions_from_right[end] = OneITensor()
+    for j in reverse(1:(length(ids) - 1))
+        contractions_from_right[j] = ids[j + 1] * contractions_from_right[j + 1]
+    end
+
+    # contractions_from_right[k] == prod(ids[j] * v[j] * v[j+1] for j in 2k+1:2:2nmodes)
+    #
+    # Basically contractions_from_right[k] is the reduced state after the partial trace
+    # over all modes > k.
+
+    result = Vector{Int}(undef, nmodes)
+    prev = OneITensor()
+    for j in 1:nmodes
+        ρ = prev * m[sb_index(j)] * m[sb_index(j) + 1] * contractions_from_right[j]
+        sl = siteind(m, sb_index(j))
+        sr = siteind(m, sb_index(j)+1)
+        # `ρ` is a matrix with indices `sl` and `sr`
+
+        @assert dim(sl) == dim(sr)
+        d = dim(sl)
+        pn = [scalar(ρ * onehot(sl => k) * onehot(sr => k)) for k in 1:d]
+        n = randsample(1:d, pn)
+        result[j] = n
+
+        if j < nmodes
+            prev *=
+                onehot(sl => n) * m[sb_index(j)] * m[sb_index(j) + 1] * onehot(sr => n) /
+                pn[n]
+        end
+    end
+    return result
 end
