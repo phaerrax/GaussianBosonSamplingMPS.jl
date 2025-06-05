@@ -26,14 +26,17 @@ function normal_mode_eigenvalue(symplectic_eigenvalue, number)
 end
 
 function largest_normal_mode_eigenvalues(
-    symplectic_eigenvalues, N, maxnumber; lowerthreshold=1e-12
+    symplectic_eigenvalues, N, maxnumber; lowerthreshold=1e-12, purity_atol=1e-6
 )
     # Some symplectic eigenvalues might be slightly less than 1 due to numerical rounding.
     # We cannot allow this, because it can lead to `normal_mode_eigenvalue` being
     # negative, so we replace them by 1. First we check that there isn't any value that is
     # significantly less than 1.
-    @assert all(symplectic_eigenvalues .> 1 .|| symplectic_eigenvalues .≈ 1)
-    replace!(x -> x ≈ 1 ? one(x) : x, symplectic_eigenvalues)
+    if any(<(1-purity_atol), symplectic_eigenvalues)
+        err = symplectic_eigenvalues[findfirst(<(1-purity_atol), symplectic_eigenvalues)]
+        throw(error("not all symplectic eigenvalues are ≥ 1: found $err"))
+    end
+    replace!(x -> x < 1 ? one(x) : x, symplectic_eigenvalues)
 
     num0 = [[n] for n in 0:maxnumber]
     num = deepcopy(num0)

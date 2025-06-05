@@ -158,8 +158,11 @@ end
 
 function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2, kwargs...)
     T = complex(eltype(g))
-    if !isapprox(purity(g), 1)
-        error("the Gaussian state must be pure.")
+
+    purity_atol = get(kwargs, :purity_atol, 1e-4)
+    g_pur = purity(g)
+    if abs(g_pur - 1) > purity_atol
+        error("input Gaussian state is not pure: its purity is $g_pur")
     end
 
     N = nmodes(g)
@@ -169,9 +172,37 @@ function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2, kw
     @debug _inspect_normal_mode_decomposition(nm_evals_right, num_idxs_right, 0, N, maxdim)
     # This is the normal-mode decomposition of a pure state, so we should find only one
     # eigenvalue, 1, corresponding to the vacuum.
-    @assert length(nm_evals_right) == length(num_idxs_right) == 1
-    @assert nm_evals_right[1] ≈ 1
-    @assert all(num_idxs_right[1] .== 0)
+    # It miiiight not be the case if the covariance matrix comes from the convex
+    # optimisation routine, where the precision is well below the default settings of
+    # `isapprox`; we need to make this function work in that case anyway.
+    # Old approach: the following assertions.
+    #
+    #   @assert length(nm_evals_right) == length(num_idxs_right) == 1
+    #   @assert nm_evals_right[1] ≈ 1
+    #   @assert all(num_idxs_right[1] .== 0)
+    #
+    # A likely result of the optimisation routine:
+    #
+    #  │ 0.99990716    	[0, 0, 0, 0]
+    #  │ 7.703e-5      	[1, 0, 0, 0]
+    #  │ 1.58e-5       	[0, 1, 0, 0]
+    #  │ 1.0e-8        	[2, 0, 0, 0]
+    #  │ Sum of discarded eigenvalues: 1.4674150783378082e-9
+    #
+    # We probably should just check that the largest eigenvalue is sufficiently within 1 and
+    # that its corresponding number state is the vacuum, then discard everything else.
+    largest_mode1_eval = argmax(first, zip(nm_evals_right, num_idxs_right))
+    if abs(first(largest_mode1_eval) - 1) > purity_atol
+        "state is not 1, but $(first(largest_mode1_eval))"
+        throw(error(errmsg))
+    end
+    if !iszero(last(largest_mode1_eval))
+        errmsg="the number state associated to the largest eigenvalue in the normal-mode " *
+               "decomposition of the whole state is not the vacuum state"
+        throw(error(errmsg))
+    end
+    nm_evals_right = [one(first(largest_mode1_eval))]
+    num_idxs_right = [last(largest_mode1_eval)]
 
     A = []  # array of MPS matrices
 
