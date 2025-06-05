@@ -77,7 +77,6 @@ function finalstate_sb(; nmodes, maxnumber, parameters, kwargs...)
 end
 
 function sb_simulation(; nmodes, maxnumber, parameters, nsamples, kwargs...)
-    # Get the final state's MPS.
     v = finalstate_sb(;
         nmodes=nmodes, maxnumber=maxnumber, parameters=parameters, kwargs...
     )
