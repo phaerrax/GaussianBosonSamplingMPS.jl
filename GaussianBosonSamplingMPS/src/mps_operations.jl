@@ -133,7 +133,7 @@ function GaussianStates.squeeze(v::MPS, n, z; kwargs...)
     return apply(conj(sq_anc), v; kwargs...)
 end
 
-function GaussianStates.squeeze(v::MPS, z::AbstractVector; kwargs...)
+function GaussianStates.squeeze(v::MPS, z; kwargs...)
     @assert length(v) == 2length(z)
     for j in eachindex(z)
         sq_phy = op("squeezer", siteind(v, sb_index(j)); squeeze=z[j])
@@ -173,24 +173,24 @@ function ITensors.op(::OpName"displace", st::SiteType"Boson", d::Int; α)
 end
 
 """
-    displace_pure(m::MPS, α::AbstractVector; kwargs...)
+    displace_pure(m::MPS, α; kwargs...)
 
 Apply a product of single-mode displacement operators on the pure state represented by the
 MPS `m`, with parameter `α[j]` on mode `j`.
 """
-function displace_pure(m::MPS, α::AbstractVector; kwargs...)
+function displace_pure(m::MPS, α; kwargs...)
     @assert length(m) == length(α)
     displacement_ops = [op("displace", siteind(m, j); α=α[j]) for j in eachindex(m)]
     return apply(displacement_ops, m; kwargs...)
 end
 
 """
-    displace(v::MPS, α::AbstractVector; kwargs...)
+    displace(v::MPS, α; kwargs...)
 
 Apply a product of single-mode displacement operators, with parameter `α[j]` on mode `j`,
 on the mixed state represented by the MPS `m` in the superboson formalism.
 """
-function GaussianStates.displace(v::MPS, α::AbstractVector; kwargs...)
+function GaussianStates.displace(v::MPS, α; kwargs...)
     @assert iseven(length(v))
     nmodes = div(length(v), 2)
     @assert nmodes == length(α)
