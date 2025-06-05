@@ -312,6 +312,10 @@ function sb_sample(rng::AbstractRNG, m::MPS)
         @assert dim(sl) == dim(sr)
         d = dim(sl)
         pn = [scalar(ρ * onehot(sl => k) * onehot(sr => k)) for k in 1:d]
+        if !isapprox(real(pn), pn)
+            throw(error("non-zero imaginary part in sampling probabilities"))
+        end
+        pn = real(pn)
         n = randsample(1:d, pn)
         result[j] = n
 
