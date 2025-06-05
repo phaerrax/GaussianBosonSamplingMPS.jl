@@ -202,7 +202,7 @@ function sb_outer(v)
     # 4) We need to fix vv's indices, since now siteind(vv, k) == siteind(vv, k + 1)': they
     #    share the same ID and this will surely cause issues when contracting the MPS with
     #    something else. We create a new set of indices and replace them all.
-    newsites = sb_siteinds(; nmodes=2n, maxnumber=maxnumber)
+    newsites = sb_siteinds(; nmodes=n, maxnumber=maxnumber)
     replace_siteinds!(vv, newsites)
 
     # Now the link index situation is something like
