@@ -222,11 +222,11 @@ squeezed2_state_coeff(x, n) = squeezed2_state_coeff(abs(x), angle(x), n)
         θ = 2pi * rand()
         ζ = r * cis(θ)  # Squeeze parameter
         squeeze2!(g, ζ, 1, 2)
-        s12 = GaussianStates._squeeze2matrix(ζ)
+        s12 = GaussianStates._squeeze2matrix(Float64, ζ)
 
         η = 0.5 * rand()  # BS transmittivity
         beamsplitter!(g, η, 2, 3)
-        b23 = GaussianStates._beamsplittermatrix(η)
+        b23 = GaussianStates._beamsplittermatrix(Float64, η)
 
         d, r = williamson(Symmetric(g.covariance_matrix))
         @test d ≈ I
