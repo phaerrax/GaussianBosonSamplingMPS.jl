@@ -206,37 +206,41 @@ function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2, kw
 
     A = []  # array of MPS matrices
 
-    for bond_idx in 1:(N - 1)
+    @showprogress for bond_idx in 1:N
         @debug "Computing block on mode $bond_idx"
-        gpart = partialtrace(g, 1:bond_idx)
-        nm_evals_left, num_idxs_left, S_left = normal_mode_decomposition(
-            gpart, nvals, maxnumber; kwargs...
-        )
-        # (We don't need the eigenvalues.)
-        @debug _inspect_normal_mode_decomposition(
-            nm_evals_left, num_idxs_left, bond_idx, N, maxdim
-        )
-
-        # At step k we have the decompositions of [1 ... k] as "right" and
-        # [k+1 ... N] as "left".
-        num_idxs_left = first(num_idxs_left, maxdim)
-        t = Array{T}(undef, maxnumber + 1, length(num_idxs_right), length(num_idxs_left))
-        for n_k in 0:maxnumber
-            t[n_k + 1, :, :] .= _MPSblock(
-                n_k, num_idxs_left, S_left, num_idxs_right, S_right
+        if bond_idx < N
+            gpart = partialtrace(g, 1:bond_idx)
+            nm_evals_left, num_idxs_left, S_left = normal_mode_decomposition(
+                gpart, nvals, maxnumber; kwargs...
             )
+            # (We don't need the eigenvalues.)
+            @debug _inspect_normal_mode_decomposition(
+                nm_evals_left, num_idxs_left, bond_idx, N, maxdim
+            )
+
+            # At step k we have the decompositions of [1 ... k] as "right" and
+            # [k+1 ... N] as "left".
+            num_idxs_left = first(num_idxs_left, maxdim)
+            t = Array{T}(
+                undef, maxnumber + 1, length(num_idxs_right), length(num_idxs_left)
+            )
+            for n_k in 0:maxnumber
+                t[n_k + 1, :, :] .= _MPSblock(
+                    n_k, num_idxs_left, S_left, num_idxs_right, S_right
+                )
+            end
+            push!(A, t)
+
+            num_idxs_right = num_idxs_left
+            S_right = S_left
+        else  # bond_idx == N
+            t = Array{T}(undef, maxnumber + 1, length(num_idxs_right), 1)
+            for n_k in 0:maxnumber
+                t[n_k + 1, :, 1] .= _MPSblock_end(T, n_k, num_idxs_right, S_right)
+            end
+            push!(A, t)
         end
-        push!(A, t)
-
-        num_idxs_right = num_idxs_left
-        S_right = S_left
     end
-
-    t = Array{T}(undef, maxnumber + 1, length(num_idxs_right), 1)
-    for n_k in 0:maxnumber
-        t[n_k + 1, :, 1] .= _MPSblock_end(T, n_k, num_idxs_right, S_right)
-    end
-    push!(A, t)
 
     return A
 end
