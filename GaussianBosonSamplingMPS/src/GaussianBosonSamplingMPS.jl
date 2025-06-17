@@ -2,6 +2,10 @@ module GaussianBosonSamplingMPS
 
 using LinearAlgebra, GaussianStates, ITensors, ITensorMPS
 
+# Sampling
+using Distributions: MvNormal
+using ProgressMeter
+
 # Optimisation
 using SCS, JuMP
 
@@ -20,5 +24,8 @@ include("mps_operations.jl")
 
 export optimise
 include("state_optimisation.jl")
+
+export sample_displaced
+include("sampling.jl")
 
 end # module GaussianBosonSamplingMPS
