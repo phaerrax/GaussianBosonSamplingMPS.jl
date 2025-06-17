@@ -2,6 +2,9 @@ module GaussianBosonSamplingMPS
 
 using LinearAlgebra, GaussianStates, ITensors, ITensorMPS
 
+# Optimisation
+using SCS, JuMP
+
 include("normal_mode_decomposition.jl")
 include("hafnian.jl")
 
@@ -14,5 +17,8 @@ include("superbosons.jl")
 
 export attenuate, firstmoments, covariancematrix, displace_pure
 include("mps_operations.jl")
+
+export optimise
+include("state_optimisation.jl")
 
 end # module GaussianBosonSamplingMPS
