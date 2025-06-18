@@ -12,8 +12,8 @@ using SCS, JuMP
 include("normal_mode_decomposition.jl")
 include("hafnian.jl")
 
-# There's nothing we really need to export for now. The only function which is supposed
-# to be accessed from the outside is `MPS`, whose name is already exported by ITensorMPS.
+export enlargelocaldim
+# The `MPS` name is already exported by ITensorMPS
 include("mps_construction.jl")
 
 export measure, sb_siteinds, sb_index, inv_sb_index, sb_outer, sb_sample

@@ -238,3 +238,15 @@ squeezed2_state_coeff(x, n) = squeezed2_state_coeff(abs(x), angle(x), n)
         @test number(g) ≈ sum(expect(v, "N"))
     end
 end
+
+@testset "Local dimension increase" begin
+    d1 = 4
+    s = siteinds("Boson", 4; dim=d1)
+    x = random_mps(s; linkdims=10)
+
+    d2 = 10
+    larger_x = enlargelocaldim(x, d2)
+
+    @test all(dim(siteind(larger_x, k)) == d2 for k in eachindex(larger_x))
+    @test norm.(x) ≈ norm.(larger_x)
+end

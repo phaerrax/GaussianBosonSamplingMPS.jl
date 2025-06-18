@@ -281,3 +281,41 @@ function ITensorMPS.MPS(g::GaussianState; maxdim, maxnumber, kwargs...)
     v[N] = ITensor(blocks[N], sites[N], dag(l[N - 1]))
     return MPS(v)
 end
+
+"""
+    enlargelocaldim(v::MPS, newdim)
+
+Return a new MPS with the local dimension increased to `newdim`.
+
+Note that the new MPS will be defined on a new set of site indices, so it will be
+incompatible with the original one.
+"""
+function enlargelocaldim(v::MPS, newdim)
+    # Strategy: let `A[k, iₖ]` be the matrices from `v`. We build a new MPS with matrices
+    # `B[k, iₖ]` with the same bond dimensions, but bigger physical dimension (we'll need to
+    # create a different set of site indices), then set `B[k, iₖ]` equal to `A[k, iₖ]` if
+    # `iₖ ≤ d`, otherwise to zero.
+    if !allequal(dim(siteind(v, k)) for k in eachindex(v))
+        error("enlargelocaldim with non-homogeneous local dimension is not supported.")
+    end
+
+    currentdim = dim(siteind(v, 1))
+    n = length(v)
+    sind = siteinds("Boson", n; dim=newdim)  # enlarged physical sites
+    v_enlarged = MPS(ITensors.scalartype(v), sind; linkdims=linkdims(v))
+    lind = linkinds(v_enlarged)  # link indices or the new MPS
+
+    v_enlarged[1][sind[1] => 1:currentdim, lind[1] => :] = array(
+        v[1], siteind(v, 1), linkind(v, 1)
+    )
+    for k in 2:(n - 1)
+        v_enlarged[k][sind[k] => 1:currentdim, lind[k - 1] => :, lind[k] => :] = array(
+            v[k], siteind(v, k), linkind(v, k-1), linkind(v, k)
+        )
+    end
+    v_enlarged[n][sind[n] => 1:currentdim, lind[n - 1] => :] = array(
+        v[n], siteind(v, n), linkind(v, n-1)
+    )
+
+    return v_enlarged
+end
