@@ -18,27 +18,17 @@ function parsecommandline()
             :arg_type => String,
             :required => true,
         ),
-        ["--maxdim_pre", "-b"],
+        ["--maxdim", "-b"],
+        Dict(:help => "maximum bond dimension", :arg_type => Int, :required => true),
+        ["--maxnumber_mps", "-n"],
         Dict(
-            :help => "maximum bond dimension (before displacement)",
+            :help => "maximum number of photons in each mode (MPS construction)",
             :arg_type => Int,
             :required => true,
         ),
-        ["--maxdim_post", "-d"],
-        Dict(
-            :help => "maximum bond dimension (after displacement)",
-            :arg_type => Int,
-            :required => true,
-        ),
-        ["--maxnumber_pre", "-n"],
+        ["--maxnumber_displacement", "-d"],
         Dict(
             :help => "maximum number of photons in each mode (before displacement)",
-            :arg_type => Int,
-            :required => true,
-        ),
-        ["--maxnumber_post", "-p"],
-        Dict(
-            :help => "maximum number of photons in each mode (after displacement)",
             :arg_type => Int,
             :required => true,
         ),
@@ -81,21 +71,20 @@ function generate_mps()
     @info "Optimising final state"
     g_opt, W = optimise(g; verbose=args[:verbose])
 
-    @info "Computing MPS of the final state"
-    v = MPS(
-        g_opt; maxdim=args[:maxdim_pre], maxnumber=args[:maxnumber_pre], purity_atol=1e-3
-    )
+    @info "Computing MPS of final state"
+    v = MPS(g_opt; maxdim=args[:maxdim], maxnumber=args[:maxnumber_mps], purity_atol=1e-3)
 
-    #TODO enlarge the MPS
-    #TODO add sampling, maybe in another function
-    
+    v = enlargelocaldim(v, args[:maxnumber_displacement]+1)
+
     outputfile = args[:output] * ".h5"
     @info "Writing final MPS on $outputfile"
     h5open(outputfile, "w") do hf
+        write(hf, "squeeze_parameters", r)
+        write(hf, "transfer_matrix", T)
         write(hf, "final_state", v)
     end
 
+    # TODO sampling...
+
     return nothing
 end
-
-generate_mps()
