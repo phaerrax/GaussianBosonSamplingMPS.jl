@@ -32,6 +32,13 @@ function parsecommandline()
             :arg_type => Int,
             :required => true,
         ),
+        ["--nsamples", "-s"],
+        Dict(:help => "number of samples", :arg_type => Int, :required => true),
+        ["--nsamples_per_displacement", "-i"],
+        Dict(
+            :help => "number of samples for each random displacement (default: √nsamples)",
+            :arg_type => Int,
+        ),
         ["--scs_eps"],
         Dict(:help => "SCS working precision", :arg_type => Float64),
         ["--output", "-o"],
@@ -48,7 +55,7 @@ function parsecommandline()
     return args
 end
 
-function generate_mps()
+function main()
     args = parsecommandline()
 
     sqparfile = args[:squeeze_parameters]
@@ -93,7 +100,21 @@ function generate_mps()
         write(hf, "final_state", v)
     end
 
-    # TODO sampling...
+    samples=sample_displaced(
+        v,
+        W;
+        nsamples=args[:nsamples],
+        nsamples_per_displacement=get(
+            args, :nsamples_per_displacement, isqrt(args[:nsamples])
+        ),
+    )
+
+    @info "Writing samples on $outputfile"
+    h5open(outputfile, "cw") do hf
+        write(hf, "samples", samples)
+    end
 
     return nothing
 end
+
+main()
