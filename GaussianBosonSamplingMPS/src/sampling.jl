@@ -2,12 +2,21 @@
     sample_displaced(ψ::MPS, W; nsamples, nsamples_per_displacement, kwargs...)
 
 Apply random displacements sampled from the positive matrix `W` to the pure state `ψ` and
-sample from the resulting state. 
+sample from the resulting state.
 
 The output consists of a total of `nsamples` samples, such that a new random displacement
 vector is computed each `nsamples_per_displacement` draws.
 """
 function sample_displaced(ψ::MPS, W; nsamples, nsamples_per_displacement, kwargs...)
+    @assert size(W, 1) == size(W, 2) == 2length(ψ)
+    @assert nsamples ≥ nsamples_per_displacement
+    ψnorm = norm(ψ)
+    if abs(1.0 - ψnorm) > 1E-8
+        # This condition is the same used by ITensorMPS in its `sample` method.
+        @warn "sample_displaced: MPS is not normalised, norm=$ψnorm. Continuing with " *
+            "a normalised MPS."
+        ψ = normalize(ψ)
+    end
     # The Distributions package defines the multivariate normal distribution as
     #
     #                       1
@@ -40,11 +49,11 @@ function sample_displaced(ψ::MPS, W; nsamples, nsamples_per_displacement, kwarg
     ]
 
     @showprogress desc="Sampling..." for b in 1:nbatches
-        m_displaced = displace_pure(m, αs[b]; kwargs...)  # displace the MPS
-        orthogonalize!(m_displaced, 1)
+        ψ_displaced = displace_pure(ψ, αs[b])  # displace the state
+        orthogonalize!(ψ_displaced, 1)
         for _ in 1:nsamples_per_displacement
             # Sample from the MPS.
-            samples[i] = sample(m_displaced)
+            samples[i] = sample(ψ_displaced)
             i += 1
         end
     end
