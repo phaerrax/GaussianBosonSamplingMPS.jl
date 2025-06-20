@@ -1,5 +1,5 @@
 """
-    optimise(g::GaussianState; verbose=false)
+    optimise(g::GaussianState; verbose=false, scs_eps=nothing)
 
 Return `gₚ`, `W` where `gₚ` is a new Gaussian state and `W` is a positive semi-definite
 matrix such that `W + gₚ.covariance_matrix == g.covariance_matrix` and `gₚ` contains a
@@ -7,7 +7,7 @@ smaller number of photons.
 
 Set `verbose = true` to print the information provided by SCS about the optimisation.
 """
-function optimise(g::GaussianState; verbose=false)
+function optimise(g::GaussianState; verbose=false, scs_eps=nothing)
     @debug "Average photon number in non-optimised state: ", number(g)
 
     n = nmodes(g)
@@ -23,6 +23,11 @@ function optimise(g::GaussianState; verbose=false)
     @constraint(
         model, kron(I(2), x) + kron([[0, 1] [-1, 0]], GaussianStates.Ω(n)) ≥ 0, PSDCone()
     )  # uncertainty relations
+
+    if !isnothing(scs_eps)
+        set_optimizer_attribute(model, "eps_abs", scs_eps)
+        set_optimizer_attribute(model, "eps_rel", scs_eps)
+    end
 
     JuMP.optimize!(model)
 

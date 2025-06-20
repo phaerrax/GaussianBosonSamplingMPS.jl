@@ -32,13 +32,20 @@ function parsecommandline()
             :arg_type => Int,
             :required => true,
         ),
+        ["--scs_eps"],
+        Dict(:help => "SCS working precision", :arg_type => Float64),
         ["--output", "-o"],
         Dict(:help => "basename to output file", :arg_type => String, :required => true),
         ["--verbose", "-v"],
         Dict(:help => "print additional information", :action => :store_true),
     )
 
-    return Dict(Symbol(k) => v for (k, v) in parse_args(s))
+    args = Dict()
+    for (k, v) in parse_args(s)
+        isnothing(v) || push!(args, Symbol(k) => v)
+    end
+
+    return args
 end
 
 function generate_mps()
@@ -69,7 +76,9 @@ function generate_mps()
     g = GaussianState(Symmetric(σ))
 
     @info "Optimising final state"
-    g_opt, W = optimise(g; verbose=args[:verbose])
+    optimise_kwargs = Dict{Symbol,Any}(:verbose => args[:verbose])
+    haskey(args, :scs_eps) && push!(optimise_kwargs, :scs_eps => args[:scs_eps])
+    g_opt, W = optimise(g; optimise_kwargs...)
 
     @info "Computing MPS of final state"
     v = MPS(g_opt; maxdim=args[:maxdim], maxnumber=args[:maxnumber_mps], purity_atol=1e-3)
