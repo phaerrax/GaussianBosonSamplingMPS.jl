@@ -4,8 +4,10 @@
 Apply random displacements sampled from the positive semi-definite matrix `W` to the pure
 state `ψ` and sample `nsamples` elements from the resulting state.
 
-The output consists of a total of `nsamples` samples, such that a new random displacement
-vector is computed each `nsamples_per_displacement` draws.
+Return a matrix of `UInt8` elements such that each column is a sample drawn from the final
+state, such that a new displacement vector is computed each `nsamples_per_displacement`
+draws. (The matrix will actually have a number of columns equal to
+`nsamples_per_displacement * floor(nsamples / nsamples_per_displacement)`.)
 
 The `eval_atol` keyword argument is used as threshold to decide whether an eigenvalue of `W`
 must be considered zero (usually it should be of the same order of the `eps` tolerances of
@@ -91,13 +93,15 @@ function sample_displaced(
         j in axes(αs_xpxp, 2)
     ]
 
+    col_idx = 1
+    samples = Matrix{UInt8}(undef, n, nbatches * nsamples_per_displacement)
     @showprogress desc="Sampling..." for b in 1:nbatches
         ψ_displaced = displace_pure(ψ, αs[b])  # displace the state
         orthogonalize!(ψ_displaced, 1)
         for _ in 1:nsamples_per_displacement
             # Sample from the MPS.
-            samples[i] = sample(ψ_displaced)
-            i += 1
+            samples[:, col_idx] .= sample(ψ_displaced) .- 1
+            col_idx += 1
         end
     end
 
