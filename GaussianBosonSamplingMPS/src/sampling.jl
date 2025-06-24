@@ -93,16 +93,17 @@ function sample_displaced(
         j in axes(αs_xpxp, 2)
     ]
 
-    col_idx = 1
-    samples = Matrix{UInt8}(undef, n, nbatches * nsamples_per_displacement)
-    @showprogress desc="Sampling..." for b in 1:nbatches
+    batchsize = nsamples_per_displacement
+    samples = Matrix{UInt8}(undef, n, nbatches * batchsize)
+    pbar = Progress(nbatches; desc="Sampling...")
+    Threads.@threads for b in 1:nbatches
         ψ_displaced = displace_pure(ψ, αs[b])  # displace the state
         orthogonalize!(ψ_displaced, 1)
-        for _ in 1:nsamples_per_displacement
+        for j in 1:batchsize
             # Sample from the MPS.
-            samples[:, col_idx] .= sample(ψ_displaced) .- 1
-            col_idx += 1
+            samples[:, (b - 1) * batchsize + j] .= sample(ψ_displaced) .- 1
         end
+        next!(pbar)
     end
 
     return samples
