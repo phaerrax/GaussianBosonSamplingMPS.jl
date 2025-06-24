@@ -166,10 +166,14 @@ function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2, kw
     end
 
     N = nmodes(g)
-    nm_evals_right, num_idxs_right, S_right = normal_mode_decomposition(
-        g, N, maxnumber; kwargs...
-    )
-    @debug _inspect_normal_mode_decomposition(nm_evals_right, num_idxs_right, 0, N, maxdim)
+    num_idxs = Vector{Vector{Vector{Int}}}(undef, N)
+    S = Vector{Matrix{Float64}}(undef, N)
+    nm_evals, num_idxs[1], S[1] = normal_mode_decomposition(g, N, maxnumber; kwargs...)
+    # We don't really need the eigenvalues for the MPS construction, they are needed
+    # just to find out the most relevant number states (within the
+    # `normal_mode_decomposition` function), so we don't bother saving all of them in an
+    # array.
+    @debug _inspect_normal_mode_decomposition(nm_evals, num_idxs[1], 0, N, maxdim)
     # This is the normal-mode decomposition of a pure state, so we should find only one
     # eigenvalue, 1, corresponding to the vacuum.
     # It miiiight not be the case if the covariance matrix comes from the convex
@@ -191,7 +195,7 @@ function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2, kw
     #
     # We probably should just check that the largest eigenvalue is sufficiently within 1 and
     # that its corresponding number state is the vacuum, then discard everything else.
-    largest_mode1_eval = argmax(first, zip(nm_evals_right, num_idxs_right))
+    largest_mode1_eval = argmax(first, zip(nm_evals, num_idxs[1]))
     if abs(first(largest_mode1_eval) - 1) > purity_atol
         "state is not 1, but $(first(largest_mode1_eval))"
         throw(error(errmsg))
@@ -201,26 +205,31 @@ function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2, kw
                "decomposition of the whole state is not the vacuum state"
         throw(error(errmsg))
     end
-    nm_evals_right = [one(first(largest_mode1_eval))]
-    num_idxs_right = [last(largest_mode1_eval)]
+    num_idxs[1] = [last(largest_mode1_eval)]
 
-    A = []  # array of MPS matrices
+    # Precompute all normal-mode decompositions
+    Threads.@threads for bond_idx in 1:(N - 1)
+        gpart = partialtrace(g, 1:bond_idx)  # Trace away modes from 1 to `bond_idx`
+        nm_evals, num_idxs[bond_idx + 1], S[bond_idx + 1] = normal_mode_decomposition(
+            gpart, nvals, maxnumber; kwargs...
+        )
+        @debug _inspect_normal_mode_decomposition(
+            nm_evals, num_idxs[bond_idx + 1], bond_idx, N, maxdim
+        )
+    end
 
-    @showprogress for bond_idx in 1:N
-        @debug "Computing block on mode $bond_idx"
+    A = Vector{Array{T}}(undef, N)  # array of MPS matrices
+
+    pbar = Progress(N; desc="Computing MPS matrices...")
+    Threads.@threads for bond_idx in 1:N
         if bond_idx < N
-            gpart = partialtrace(g, 1:bond_idx)
-            nm_evals_left, num_idxs_left, S_left = normal_mode_decomposition(
-                gpart, nvals, maxnumber; kwargs...
-            )
-            # (We don't need the eigenvalues.)
-            @debug _inspect_normal_mode_decomposition(
-                nm_evals_left, num_idxs_left, bond_idx, N, maxdim
-            )
+            num_idxs_left = first(num_idxs[bond_idx + 1], maxdim)
+            num_idxs_right = first(num_idxs[bond_idx], maxdim)
+            S_left = S[bond_idx + 1]
+            S_right = S[bond_idx]
 
             # At step k we have the decompositions of [1 ... k] as "right" and
             # [k+1 ... N] as "left".
-            num_idxs_left = first(num_idxs_left, maxdim)
             t = Array{T}(
                 undef, maxnumber + 1, length(num_idxs_right), length(num_idxs_left)
             )
@@ -229,17 +238,15 @@ function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2, kw
                     n_k, num_idxs_left, S_left, num_idxs_right, S_right
                 )
             end
-            push!(A, t)
-
-            num_idxs_right = num_idxs_left
-            S_right = S_left
+            A[bond_idx] = t
         else  # bond_idx == N
-            t = Array{T}(undef, maxnumber + 1, length(num_idxs_right), 1)
+            t = Array{T}(undef, maxnumber + 1, length(num_idxs[end]), 1)
             for n_k in 0:maxnumber
-                t[n_k + 1, :, 1] .= _MPSblock_end(T, n_k, num_idxs_right, S_right)
+                t[n_k + 1, :, 1] .= _MPSblock_end(T, n_k, num_idxs[end], S[end])
             end
-            push!(A, t)
+            A[bond_idx] = t
         end
+        next!(pbar)
     end
 
     return A
