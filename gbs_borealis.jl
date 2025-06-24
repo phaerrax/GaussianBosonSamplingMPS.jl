@@ -82,13 +82,14 @@ function main()
     σ = I - ϕT * ϕT' + ϕT * g0.covariance_matrix * ϕT'
     g = GaussianState(Symmetric(σ))
 
-    @info "Optimising final state"
-    optimise_kwargs = Dict{Symbol,Any}(:verbose => args[:verbose])
-    haskey(args, :scs_eps) && push!(optimise_kwargs, :scs_eps => args[:scs_eps])
-    g_opt, W = optimise(g; optimise_kwargs...)
+    scs_eps = get(args, :scs_eps, 1e-4)  # default value used by SCS
+    @info "Optimising final state (with scs_eps = $scs_eps)"
+    g_opt, W = optimise(g; :verbose => args[:verbose], scs_eps=scs_eps)
 
     @info "Computing MPS of final state"
-    v = MPS(g_opt; maxdim=args[:maxdim], maxnumber=args[:maxnumber_mps], purity_atol=1e-3)
+    v = MPS(
+        g_opt; maxdim=args[:maxdim], maxnumber=args[:maxnumber_mps], purity_atol=10*scs_eps
+    )
 
     v = enlargelocaldim(v, args[:maxnumber_displacement]+1)
 
@@ -100,13 +101,13 @@ function main()
         write(hf, "final_state", v)
     end
 
-    samples=sample_displaced(
+    samples = sample_displaced(
         v,
         W;
-        nsamples=args[:nsamples],
-        nsamples_per_displacement=get(
-            args, :nsamples_per_displacement, isqrt(args[:nsamples])
-        ),
+        :nsamples => args[:nsamples],
+        :nsamples_per_displacement =>
+            get(args, :nsamples_per_displacement, isqrt(args[:nsamples])),
+        :eval_atol => 10*scs_eps,
     )
 
     @info "Writing samples on $outputfile"
