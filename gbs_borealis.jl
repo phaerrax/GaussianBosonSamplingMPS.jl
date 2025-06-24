@@ -101,7 +101,7 @@ function main()
         write(hf, "final_state", v)
     end
 
-    samples = sample_displaced(
+    samples, displacements = sample_displaced(
         v,
         W;
         :nsamples => args[:nsamples],
@@ -112,6 +112,7 @@ function main()
 
     @info "Writing samples on $outputfile"
     h5open(outputfile, "cw") do hf
+        write(hf, "displacements", displacements)
         write(hf, "samples", samples)
     end
 

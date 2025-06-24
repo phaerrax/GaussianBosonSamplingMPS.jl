@@ -4,10 +4,14 @@
 Apply random displacements sampled from the positive semi-definite matrix `W` to the pure
 state `ψ` and sample `nsamples` elements from the resulting state.
 
-Return a matrix of `UInt8` elements such that each column is a sample drawn from the final
-state, such that a new displacement vector is computed each `nsamples_per_displacement`
-draws. (The matrix will actually have a number of columns equal to
-`nsamples_per_displacement * floor(nsamples / nsamples_per_displacement)`.)
+Return `s, αs` such that:
+* `s` is a matrix of `UInt8` elements such that each column is a sample drawn from
+  the final state, with a new displacement vector for each `nsamples_per_displacement`
+  draws. (The matrix will actually have a number of columns equal to
+  `nsamples_per_displacement * floor(nsamples / nsamples_per_displacement)`.)
+* `αs` is a matrix whose columns are the displacement vectors drawn from `W`, such that
+  `αs[:, k]` is used for the samples from ``(k-1)N`` to ``kN``, with
+  `N = floor(nsamples / nsamples_per_displacement)`.
 
 The `eval_atol` keyword argument is used as threshold to decide whether an eigenvalue of `W`
 must be considered zero (usually it should be of the same order of the `eps` tolerances of
@@ -88,23 +92,24 @@ function sample_displaced(
 
     # Since W is (supposed to be) in the xpxp format, so is each αs[:, j], and we need to
     # transform it into a complex vector so that the `displace_pure` function can read it.
-    αs = [
-        [complex(αs_xpxp[i, j], αs_xpxp[i + 1, j]) for i in 1:2:size(αs_xpxp, 1)] for
-        j in axes(αs_xpxp, 2)
-    ]
+    αs = complex.(αs_xpxp[1:2:end, :], αs_xpxp[2:2:end, :])
+    @assert size(αs, 1) == n
+    @assert size(αs, 2) == nbatches
 
     batchsize = nsamples_per_displacement
     samples = Matrix{UInt8}(undef, n, nbatches * batchsize)
     pbar = Progress(nbatches; desc="Sampling...")
     Threads.@threads for b in 1:nbatches
-        ψ_displaced = displace_pure(ψ, αs[b])  # displace the state
+        ψ_displaced = displace_pure(ψ, αs[:, b])  # displace the state
         orthogonalize!(ψ_displaced, 1)
         for j in 1:batchsize
             # Sample from the MPS.
+            # (`sample` gives numbers from 1 up to the local dimension of each site index,
+            # while we want the photon numbers, so we decrease everything by 1.)
             samples[:, (b - 1) * batchsize + j] .= sample(ψ_displaced) .- 1
         end
         next!(pbar)
     end
 
-    return samples
+    return samples, αs
 end
