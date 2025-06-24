@@ -69,7 +69,7 @@ function sample_displaced(
     # way we're sure that M is real and orthogonal, and not just approximately so.
     # The `sortby=-` tells `eigen` to return the decomposition with the eigenvalues in
     # decreasing order.
-    Λ = Diagonal(filter(x -> abs(x) < eval_atol, W_evals))
+    Λ = Diagonal(filter(x -> abs(x) > eval_atol, W_evals))
 
     random_displacement_dist = MvNormal(Λ/2)
 
