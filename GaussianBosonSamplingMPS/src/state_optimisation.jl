@@ -8,7 +8,7 @@ smaller number of photons.
 Set `verbose = true` to print the information provided by SCS about the optimisation.
 """
 function optimise(g::GaussianState; verbose=false, scs_eps=nothing)
-    @debug "Average photon number in non-optimised state: ", number(g)
+    @debug string("Average photon number in non-optimised state: ", number(g))
 
     n = nmodes(g)
     # Configure optimisation model
@@ -35,16 +35,16 @@ function optimise(g::GaussianState; verbose=false, scs_eps=nothing)
 
     # Put the solution into a new Gaussian state and show the new photon number
     opt_g = GaussianState(g.first_moments, sol)
-    @debug "Average photon number in optimised state: ", number(opt_g)
+    @debug string("Average photon number in optimised state: ", number(opt_g))
 
     @debug begin
-        ev, _ = eigen(opt_g.covariance_matrix)
-        "Eigenvalues of the optimised covariance matrix σₒₚₜ:\n", join(ev, "\n")
+        ev, _ = eigen(Symmetric(opt_g.covariance_matrix))
+        string("Eigenvalues of the optimised covariance matrix σₒₚₜ:\n", join(ev, "\n"))
     end
 
     @debug begin
         ev, _ = eigen(opt_g.covariance_matrix + im * GaussianStates.Ω(n))
-        "Eigenvalues of σₒₚₜ + iΩ:\n", join(ev, "\n")
+        string("Eigenvalues of σₒₚₜ + iΩ:\n", join(ev, "\n"))
     end
 
     return opt_g, g.covariance_matrix - sol
