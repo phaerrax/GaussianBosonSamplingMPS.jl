@@ -1,0 +1,3 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+GaussianBosonSamplingMPS = "ab5b1ad5-4448-4875-a3d4-2d0e76b80af8"
