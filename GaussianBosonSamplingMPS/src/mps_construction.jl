@@ -197,7 +197,7 @@ function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2, kw
     # that its corresponding number state is the vacuum, then discard everything else.
     largest_mode1_eval = argmax(first, zip(nm_evals, num_idxs[1]))
     if abs(first(largest_mode1_eval) - 1) > purity_atol
-        "state is not 1, but $(first(largest_mode1_eval))"
+        errmsg = "state is not 1, but $(first(largest_mode1_eval))"
         throw(error(errmsg))
     end
     if !iszero(last(largest_mode1_eval))
@@ -208,6 +208,7 @@ function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2, kw
     num_idxs[1] = [last(largest_mode1_eval)]
 
     # Precompute all normal-mode decompositions
+    pbar = Progress(N-1; desc="Computing partial normal-mode decompositions...")
     Threads.@threads for bond_idx in 1:(N - 1)
         gpart = partialtrace(g, 1:bond_idx)  # Trace away modes from 1 to `bond_idx`
         nm_evals, num_idxs[bond_idx + 1], S[bond_idx + 1] = normal_mode_decomposition(
@@ -216,6 +217,7 @@ function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2, kw
         @debug _inspect_normal_mode_decomposition(
             nm_evals, num_idxs[bond_idx + 1], bond_idx, N, maxdim
         )
+        next!(pbar)
     end
 
     A = Vector{Array{T}}(undef, N)  # array of MPS matrices
