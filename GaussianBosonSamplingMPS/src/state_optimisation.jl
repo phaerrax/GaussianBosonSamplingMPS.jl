@@ -1,7 +1,7 @@
 """
     optimise(g::GaussianState; verbose=false, scs_eps=nothing)
 
-Return `gₚ`, `W` where `gₚ` is a new Gaussian state and `W` is a positive semi-definite
+Return `gₚ, W` where `gₚ` is a new Gaussian state and `W` is a positive semi-definite
 matrix such that `W + gₚ.covariance_matrix == g.covariance_matrix` and `gₚ` contains a
 smaller number of photons.
 

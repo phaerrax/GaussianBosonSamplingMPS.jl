@@ -1,12 +1,10 @@
-"""
+@doc raw"""
     normal_mode_eigenvalue(x, m)
 
 Return the result of the function
 
 ```math
-            2  ⎛ x-1 ⎞ m
-  f(x, m) =  ─── ⎜ ────⎟
-             x+1 ⎝ x+1 ⎠
+  f(x,m) = \frac{2}{x+1} \biggl(\frac{x-1}{x+1}\biggr)^m
 ```
 
 mapping a symplectic eigenvalue `x` of a Gaussian state to the respective singular
@@ -94,8 +92,8 @@ end
     normal_mode_decomposition(g::GaussianState, N, maxnumber; kwargs...)
 
 Compute the normal-mode decomposition ([1], Eq. (3.60) at page 52) of the Gaussian state `g`
-up to the `N` largest eigenvalues, calculated by considering only the ``k``-particle sectors
-for ``k ≤ maxnumber`` on each mode.
+up to the `N` largest eigenvalues, calculated by considering only the `k`-particle sectors
+for `k ≤ maxnumber` on each mode.
 Return `vals, nums, S` where `vals` contains the eigenvalues in decreasing order, `nums`
 contains the occupation numbers of the Fock basis vector associated to the corresponding
 value in `vals`, and `S` is the symplectic matrix from the Williamson decomposition of `g`.

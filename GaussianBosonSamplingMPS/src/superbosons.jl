@@ -127,8 +127,8 @@ end
 """
     sb_outer(v::AbstractMPS)
 
-Compute the projection ``|v⟩⟨v| / ‖v‖²``, from the MPS `v` representing a pure state,
-expressed as an MPS (of double the size) in the superboson formalism.
+Compute the projection operator ``|v⟩⟨v| / ‖v‖²``, from the MPS `v` representing a pure
+state, expressed as an MPS (of double the size) in the superboson formalism.
 """
 function sb_outer(v)
     # 1) We build the MPO representing Pv = |v⟩⟨v| / ‖v‖² starting from the input MPS.

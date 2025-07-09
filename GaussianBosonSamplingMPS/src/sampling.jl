@@ -10,7 +10,7 @@ Return `s, αs` such that:
   draws. (The matrix will actually have a number of columns equal to
   `nsamples_per_displacement * floor(nsamples / nsamples_per_displacement)`.)
 * `αs` is a matrix whose columns are the displacement vectors drawn from `W`, such that
-  `αs[:, k]` is used for the samples from ``(k-1)N`` to ``kN``, with
+  `αs[:, k]` is used for the samples from `(k-1)N` to `kN`, with
   `N = floor(nsamples / nsamples_per_displacement)`.
 
 The `eval_atol` keyword argument is used as threshold to decide whether an eigenvalue of `W`

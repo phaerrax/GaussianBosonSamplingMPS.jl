@@ -97,20 +97,18 @@ function ITensors.op(::OpName"attenuator", ::SiteType"Boson", d1::Int, d2::Int; 
     return sum(kron(A[k, :, :], conj(A[k, :, :])) for k in axes(A, 1))
 end
 
-"""
+@doc raw"""
     attenuate(v::MPS, attenuation, n)
 
-Apply on mode `n` the attenuator channel ``ρ ↦ ∑ₖ Bₖ ρ Bₖ*`` on the MPS `v` representing
-the state `ρ` in the superboson formalism.
+Apply on mode `n` the attenuator channel ``ρ ↦ \sum_{k=0}^{+∞} B_k ρ \adj{B_k}`` on the MPS
+`v` representing the state ``ρ`` in the superboson formalism.
 
 ```math
-     +∞  ⎛ n+k ⎞½
-  Bₖ =  Σ  ⎜     ⎟  (√1-η²)ᵏ ηᵐ |m⟩⟨m+k|
-       ₘ₌₀ ⎝  k  ⎠
+B_k = \sum_{m=0}^{+∞} \binom{m+k}{k}^{\frac12} (1-η^2)^{\frac{k}{2}} η^m |m⟩⟨m+k|
 ```
 
-and ``η`` is the attenuation coefficient, such that ``Σₖ Bₖ ⋅ Bₖ*`` is equal to ``|0⟩⟨0|``
-when ``η = 0`` and to the identity when ``η = 1``.
+and ``η`` is the attenuation coefficient, such that ``\sum_{k=0}^{+\infty} B_k ρ \adj{B_k}``
+is equal to ``|0⟩⟨0|`` when ``η = 0`` and to ``ρ`` when ``η = 1``.
 """
 function attenuate(v::MPS, attenuation, n; kwargs...)
     sp, sa = siteind(v, sb_index(n)), siteind(v, sb_index(n)+1)
