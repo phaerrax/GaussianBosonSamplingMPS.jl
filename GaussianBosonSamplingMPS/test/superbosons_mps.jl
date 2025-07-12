@@ -6,9 +6,8 @@
     @testset "Measurements" begin
         v = random_mps(s; linkdims=10)
         vv = sb_outer(v)
-        @test GaussianBosonSamplingMPS.sb_trace(vv) ≈ 1
-        @test expect(v, "n") ≈
-            measure(vv, [LocalOperator(sb_index(j) => "n") for j in 1:nmodes])
+        @test tr(vv) ≈ 1
+        @test expect(v, "n") ≈ expect(vv, "n")
     end
 
     @testset "Sampling" begin
@@ -21,7 +20,7 @@
         r_sb = []
         for i in nsamples
             push!(r_std, sample(v))
-            push!(r_sb, sb_sample(vv))
+            push!(r_sb, sample(vv))
         end
         # Since the state is precisely an element of the Fock basis, the sampling procedure
         # should output the state itself each time. We check that:

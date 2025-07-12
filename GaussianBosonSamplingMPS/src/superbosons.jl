@@ -1,14 +1,270 @@
-using MPSTimeEvolution: LocalOperator, domain
-using ITensors: OneITensor
 using Random
+using ITensors: OneITensor
+using ITensors.SiteTypes: SiteTypes, siteind, siteinds, state
+using MPSTimeEvolution: LocalOperator, domain
+
+### Type definition
+
+# As far as its inner structure is concerned, a SuperBosonMPS is completely equivalent
+# to the "ordinary" MPS type from ITensorMPS. We need a different name so that we can define
+# functions such as `expect`, `sample` on this particular kind of MPS without having to use
+# a different name.
+
+"""
+    SuperBosonMPS
+
+A finite-size matrix-product state type that represents mixed states in the superboson
+formalism (Schmutz, 1978).
+"""
+mutable struct SuperBosonMPS <: AbstractMPS
+    data::Vector{ITensor}
+    llim::Int
+    rlim::Int
+end
 
 sb_index(n) = 2n - 1  # mode number --> MPS site
 inv_sb_index(n) = div(n + 1, 2)  # MPS site --> mode number
 # (inv_sb_index ∘ sb_index).(1:N) == 1:N
 # (sb_index ∘ inv_sb_index).(1:N) != 1:N
 
-function _id_pairs(v)
-    @assert iseven(length(v))
+set_data(SuperBosonMPS::MPS, data::Vector{ITensor}) = SuperBosonMPS(data, A.llim, A.rlim)
+
+### MPS <-> SuperBosonMPS conversion functions
+
+# These functions don't really do anything, since the inner structures of SuperBosonMPSs
+# and MPSs does not change, but the `add` function from ITensorMPS explicitly converts
+# any AbstractMPS into an MPS before adding them (this happens with MPOs, too), so we need
+# to define them.
+
+function Base.convert(::Type{MPS}, M::SuperBosonMPS)
+    return MPS(ITensorMPS.data(M); ortho_lims=ortho_lims(M))
+end
+
+function Base.convert(::Type{SuperBosonMPS}, M::MPS)
+    return SuperBosonMPS(ITensorMPS.data(M); ortho_lims=ortho_lims(M))
+end
+
+### Basic constructors
+
+# (carried over from the ones for the MPS type from ITensorMPS without almost any change)
+"""
+    SuperBosonMPS(v::Vector{<:ITensor})
+
+Construct a SuperBosonMPS from a Vector of ITensors.
+"""
+function SuperBosonMPS(A::Vector{<:ITensor}; ortho_lims::UnitRange=1:length(A))
+    return SuperBosonMPS(A, first(ortho_lims) - 1, last(ortho_lims) + 1)
+end
+
+"""
+    SuperBosonMPS()
+
+Construct an empty `SuperBosonMPS` with zero sites.
+"""
+SuperBosonMPS() = SuperBosonMPS(ITensor[], 0, 0)
+
+"""
+    SuperBosonMPS(N::Int)
+
+Construct a `SuperBosonMPS` with `N` sites with default-constructed ITensors.
+"""
+function SuperBosonMPS(N::Int; ortho_lims::UnitRange=1:N)
+    if !iseven(length(sites))
+        error("SuperBosonMPS: number of sites is not even")
+    end
+
+    return SuperBosonMPS(Vector{ITensor}(undef, N); ortho_lims=ortho_lims)
+end
+
+"""
+    SuperBosonMPS([::Type{ElT} = Float64, ]sites)
+
+Construct a `SuperBosonMPS` filled with Empty ITensors of type `ElT` from a collection of
+indices.
+"""
+function SuperBosonMPS(::Type{T}, sites::Vector{<:Index}) where {T<:Number}
+    if !iseven(length(sites))
+        error("SuperBosonMPS: number of sites is not even")
+    end
+
+    N = length(sites)
+    v = Vector{ITensor}(undef, N)
+
+    l = [Index(1, "Link,l=$i") for i in 1:(N - 1)]
+    for ii in eachindex(sites)
+        s = sites[ii]
+        if ii == 1
+            v[ii] = ITensor(T, l[ii], s)
+        elseif ii == N
+            v[ii] = ITensor(T, dag(l[ii - 1]), s)
+        else
+            v[ii] = ITensor(T, dag(l[ii - 1]), s, l[ii])
+        end
+    end
+    return MPS(v)
+end
+
+function SuperBosonMPS(sites::Vector{<:Index}, args...; kwargs...)
+    SuperBosonMPS(Float64, sites, args...; kwargs...)
+end
+
+"""
+    SuperBosonMPS(
+        ::Type{T},
+        sites::Vector{<:Index},
+        states::Union{Vector{String}, Vector{Int}, String, Int}
+    )
+
+Construct a product state `SuperBosonMPS` of element type `T`, having site indices `sites`,
+and which corresponds to the initial state given by the array `states`. The input `states`
+may be an array of strings or an array of ints recognized by the `state` function defined
+for the relevant `Index` tag type. In addition, a single string or int can be input to
+create a uniform state.
+
+# Examples
+
+```julia
+N = 10
+sites = sb_siteinds(; nmodes=N, maxnumber=4)
+states = [isodd(n) ? "1" : "2" for n in 1:N]
+psi = SuperBosonMPS(ComplexF64, sites, states)
+phi = SuperBosonMPS(sites, "1")
+```
+"""
+function SuperBosonMPS(eltype::Type{<:Number}, sites::Vector{<:Index}, states_)
+    if length(sites) != 2length(states_)
+        throw(
+            DimensionMismatch(
+                "SuperBosonMPS: Number of sites and and initial vals don't match"
+            ),
+        )
+    end
+    N = 2length(states_)
+    M = SuperBosonMPS(length(states_))
+
+    links = [Index(1; tags="Link,l=$n") for n in 1:N]
+
+    M[1] = state(sites[1], states_[1]) * state(links[1], 1)
+    M[2] = state(dag(links[1]), 1) * state(sites[2], states_[1]) * state(links[2], 1)
+    for n in 3:2:(N - 2)
+        M[n] =
+            state(dag(links[n - 1]), 1) *
+            state(sites[n], states_[inv_sb_index(n)]) *
+            state(links[n], 1)
+        M[n + 1] =
+            state(dag(links[n]), 1) *
+            state(sites[n + 1], states_[inv_sb_index(n)]) *
+            state(links[n + 1], 1)
+    end
+    M[N - 1] =
+        state(dag(links[N - 2]), 1) *
+        state(sites[N - 1], states_[inv_sb_index(N)]) *
+        state(links[N - 1], 1)
+    M[N] = state(dag(links[N - 1]), 1) * state(sites[N], states_[inv_sb_index(N)])
+
+    return convert_leaf_eltype(eltype, M)
+end
+
+function SuperBosonMPS(
+    ::Type{T}, sites::Vector{<:Index}, state::Union{String,Integer}
+) where {T<:Number}
+    if !iseven(length(sites))
+        error("SuperBosonMPS: number of sites is not even")
+    end
+
+    return SuperBosonMPS(T, sites, fill(state, div(length(sites), 2)))
+end
+
+function SuperBosonMPS(
+    ::Type{T}, sites::Vector{<:Index}, states::Function
+) where {T<:Number}
+    states_vec = [states(n) for n in 1:length(states)]
+    return SuperBosonMPS(T, sites, states_vec)
+end
+
+"""
+    SuperBosonMPS(sites::Vector{<:Index}, states)
+
+Construct a product state `SuperBosonMPS` having site indices `sites`, and which corresponds
+to the initial state given by the array `states`. The `states` array may consist of either
+an array of integers or strings, as recognized by the `state` function defined for the
+relevant Index tag type.
+
+# Examples
+
+```julia
+N = 10
+sites = sb_siteinds(; nmodes=N, maxnumber=4)
+states = [isodd(n) ? "1" : "0" for n in 1:N]
+psi = SuperBosonMPS(sites, states)
+```
+"""
+SuperBosonMPS(sites::Vector{<:Index}, states) = SuperBosonMPS(Float64, sites, states)
+
+### Index getting/setting utilities
+
+# Same as the ones for the MPS type. They are needed somewhere in the internal workings
+# of the functions for the AbstractMPS types, such as `add`, so we need to define them
+# for our new type.
+
+"""
+    siteind(M::SuperBosonMPS, j::Int; kwargs...)
+
+Get the first site Index of the SuperBosonMPS. Return `nothing` if none is found.
+"""
+SiteTypes.siteind(M::SuperBosonMPS, j::Int; kwargs...) = siteind(first, M, j; kwargs...)
+
+"""
+    siteind(::typeof(only), M::SuperBosonMPS, j::Int; kwargs...)
+
+Get the only site Index of the SuperBosonMPS. Return `nothing` if none is found.
+"""
+function SiteTypes.siteind(::typeof(only), M::SuperBosonMPS, j::Int; kwargs...)
+    is = siteinds(M, j; kwargs...)
+    if isempty(is)
+        return nothing
+    end
+    return only(is)
+end
+
+"""
+    siteinds(M::SuperBosonMPS)
+    siteinds(::typeof(first), M::SuperBosonMPS)
+
+Get a vector of the first site Index found on each tensor of the SuperBosonMPS.
+
+    siteinds(::typeof(only), M::SuperBosonMPS)
+
+Get a vector of the only site Index found on each tensor of the SuperBosonMPS. Errors if
+more than one is found.
+
+    siteinds(::typeof(all), M::SuperBosonMPS)
+
+Get a vector of the all site Indices found on each tensor of the SuperBosonMPS. Returns a
+Vector of IndexSets.
+"""
+SiteTypes.siteinds(M::SuperBosonMPS; kwargs...) = siteinds(first, M; kwargs...)
+
+function ITensorMPS.replace_siteinds!(M::SuperBosonMPS, sites)
+    for j in eachindex(M)
+        sj = only(siteinds(M, j))
+        M[j] = replaceinds(M[j], sj => sites[j])
+    end
+    return M
+end
+
+function ITensorMPS.replace_siteinds(M::SuperBosonMPS, sites)
+    replace_siteinds!(copy(SuperBosonMPS), sites)
+end
+
+### Expectation values
+
+# Here is where the SuperBosonMPS type starts to differ significantly from ordinary MPSs.
+# These MPSs represent mixed states, so we want to calculate quantities like tr(Aρ): this
+# means applying the "A" operator on the physical sites, leaving the ancillary sites alone,
+# then contracting each physical site with its ancillary companion.
+
+function _id_pairs(v::AbstractMPS)
     nmodes = div(length(v), 2)
 
     maxn = dim(siteind(v, 1)) - 1
@@ -20,8 +276,7 @@ function _id_pairs(v)
     ]
 end
 
-function _id_contractions(v)
-    @assert iseven(length(v))
+function _id_contractions(v::AbstractMPS)
     nmodes = div(length(v), 2)
     sb_id_blocks = _id_pairs(v)
     return [
@@ -29,10 +284,103 @@ function _id_contractions(v)
     ]
 end
 
+"""
+    expect(psi::SuperBosonMPS, op::AbstractString...; kwargs...)
+    expect(psi::SuperBosonMPS, op::Matrix{<:Number}...; kwargs...)
+    expect(psi::SuperBosonMPS, ops; kwargs...)
+
+Given an SuperBosonMPS `psi` and a single operator name, returns a vector of the expected
+value of the operator on each site of the SuperBosonMPS.
+
+If multiple operator names are provided, returns a tuple of expectation value vectors.
+
+If a container of operator names is provided, returns the same type of container with names
+replaced by vectors of expectation values.
+
+# Optional keyword arguments
+
+  - `sites = 1:length(psi)`: compute expected values only for modes in the given range
+
+# Examples
+
+```julia
+N = 10
+
+s = sb_siteinds("Boson", N)
+psi = sb_outer(random_mps(s; linkdims=4))
+expect(psi, "N")  # compute for all sites
+expect(psi, "N"; sites=2:4)  # compute for sites 2, 3 and 4
+expect(psi, "N"; sites=3)  # compute for site 3 only (output will be a scalar)
+expect(psi, ["A*Adag", "N"])  # compute A*Adag and N for all sites
+expect(psi, [0 0; 0 1])  # same as expect(psi, "N") if maxnumber == 1
+```
+"""
+function ITensorMPS.expect(psi::SuperBosonMPS, ops; sites=1:div(length(psi), 2))
+    #psi = copy(psi)
+    N = div(length(psi), 2)
+    ElT = ITensorMPS.scalartype(psi)
+    s = siteinds(psi)
+
+    site_range = (sites isa AbstractRange) ? sites : collect(sites)
+    Ns = length(site_range)
+    start_site = first(site_range)
+
+    el_types = map(o -> ishermitian(op(o, s[sb_index(start_site)])) ? real(ElT) : ElT, ops)
+
+    sb_id_blocks = _id_pairs(psi)
+    ids = _id_contractions(psi)
+    tr_psi = scalar(prod(ids))
+    iszero(tr_psi) && error("SuperBosonMPS has zero trace in function `expect`")
+
+    ex = map((o, el_t) -> zeros(el_t, Ns), ops, el_types)
+    for (entry, j) in enumerate(site_range)
+        for (n, opname) in enumerate(ops)
+            oⱼ = ITensors.adapt(ITensors.datatype(psi[j]), op(opname, s[sb_index(j)]))
+            x = OneITensor()
+            for n in 1:N
+                if n == j
+                    x *=
+                        dag(apply(adj(oⱼ), sb_id_blocks[n])) *
+                        psi[sb_index(n)] *
+                        psi[sb_index(n) + 1]
+                else
+                    x *= ids[n]
+                end
+            end
+            val = scalar(x) / tr_psi
+            ex[n][entry] = (el_types[n] <: Real) ? real(val) : val
+        end
+    end
+
+    if sites isa Number
+        return map(arr -> arr[1], ex)
+    end
+    return ex
+end
+
+function ITensorMPS.expect(psi::SuperBosonMPS, op::AbstractString; kwargs...)
+    return first(expect(psi, (op,); kwargs...))
+end
+
+function ITensorMPS.expect(psi::SuperBosonMPS, op::Matrix{<:Number}; kwargs...)
+    return first(expect(psi, (op,); kwargs...))
+end
+
+function ITensorMPS.expect(
+    psi::SuperBosonMPS, op1::AbstractString, ops::AbstractString...; kwargs...
+)
+    return expect(psi, (op1, ops...); kwargs...)
+end
+
+function ITensorMPS.expect(
+    psi::SuperBosonMPS, op1::Matrix{<:Number}, ops::Matrix{<:Number}...; kwargs...
+)
+    return expect(psi, (op1, ops...); kwargs...)
+end
+
 adj(x) = swapprime(dag(x), 0 => 1)
 
 function measure(v::AbstractMPS, l::LocalOperator)
-    @assert iseven(length(v))
     nmodes = div(length(v), 2)
     sb_id_blocks = _id_pairs(v)
     ids = _id_contractions(v)
@@ -56,7 +404,6 @@ function measure(v::AbstractMPS, l::LocalOperator)
 end
 
 function measure(v::AbstractMPS, ls::Vector{LocalOperator})
-    @assert iseven(length(v))
     nmodes = div(length(v), 2)
 
     sb_id_blocks = _id_pairs(v)
@@ -85,7 +432,6 @@ function measure(v::AbstractMPS, ls::Vector{LocalOperator})
 end
 
 function measure(v::AbstractMPS, ls::Matrix{LocalOperator})
-    @assert iseven(length(v))
     nmodes = div(length(v), 2)
 
     sb_id_blocks = _id_pairs(v)
@@ -113,8 +459,7 @@ function measure(v::AbstractMPS, ls::Matrix{LocalOperator})
     return results
 end
 
-function sb_trace(v::MPS)
-    @assert iseven(length(v))
+function LinearAlgebra.tr(v::SuperBosonMPS)
     return scalar(prod(_id_contractions(v)))
 end
 
@@ -125,7 +470,7 @@ function sb_siteinds(; nmodes, maxnumber)
 end
 
 """
-    sb_outer(v::AbstractMPS)
+    sb_outer(v::MPS)
 
 Compute the projection operator ``|v⟩⟨v| / ‖v‖²``, from the MPS `v` representing a pure
 state, expressed as an MPS (of double the size) in the superboson formalism.
@@ -246,18 +591,18 @@ function sb_outer(v)
         replacetags!(vv[k + 1], "m=$k", "l=$k")
     end
 
-    return vv
+    return convert(SuperBosonMPS, vv)
 end
 
 """
-    sb_sample(m::MPS)
+    sample(m::SuperBosonMPS)
 
 Given a "superbosonic" MPS `m` with unit trace, compute a `Vector{Int}` of `length(m)/2`
 elements corresponding to one sample of the probability distribution defined by the
 components of the density matrix that the MPS represents.
 """
-function sb_sample(m::MPS)
-    return sb_sample(Random.default_rng(), m)
+function ITensorMPS.sample(m::SuperBosonMPS)
+    return sample(Random.default_rng(), m)
 end
 
 """
@@ -270,14 +615,13 @@ function randsample(values, weights)
     return values[findfirst(odds .≥ rand())]
 end
 
-function sb_sample(rng::AbstractRNG, m::MPS)
+function sample(rng::AbstractRNG, m::SuperBosonMPS)
     # See https://tensornetwork.org/mps/algorithms/sampling for an explanation of this MPS
     # sampling algorithm.
-    @assert iseven(length(m))
     nmodes = div(length(m), 2)
 
-    trace = sb_trace(m)
-    if abs(1.0 - trace) > 1E-8
+    trace_m = tr(m)
+    if abs(1.0 - trace_m) > 1E-8
         error("sample: MPS is not normalized, trace=$trace")
     end
 
