@@ -5,8 +5,8 @@
 The package introduces a new type, called `SuperBosonMPS`, which is basically
 an ordinary `MPS` from ITensors with some additional decoration.
 This MPS represents a generic mixed state in a many-body bosonic Fock space
-using the _superboson_ formalism [4], which translates mixed states to pure
-states in an enlarged Hilbert space. 
+using the _superboson_ formalism [Schmutz1978](@cite), which translates mixed
+states to pure states in an enlarged Hilbert space.
 
 It is a subtype of `AbstractMPS`, therefore you can use most of the methods
 already defined by ITensors on the `SuperBosonMPS` type too.
@@ -70,8 +70,8 @@ beamsplitter
 ## Boson sampling output simulation
 
 Here lies the heart of this package: the following methods implement the
-algorithms in [1] and [2] in order to be able to simulate a Gaussian boson
-sampling experiment with matrix-product states.
+algorithms in [Oh2024](@cite) and [Quesada2019](@cite) in order to be able to
+simulate a Gaussian boson sampling experiment with matrix-product states.
 
 The main functions are the following.
 
@@ -79,10 +79,10 @@ The main functions are the following.
   to decompose the covariance matrix of a Gaussian state into a sum of
     * a pure covariance matrix which "contains" a smaller amount of photons,
     * a positive semi-definite matrix
-  following the procedure detailed in [1].
+  following the procedure detailed in [Oh2024](@cite).
 - `MPS` computes a matrix-product state that approximates a pure Gaussian state
-  following the algorithm presented in [1], by using the Franck-Condon formula
-  from [2].
+  following the algorithm presented in [Oh2024](@cite), by using the
+  Franck-Condon formula from [Quesada2019](@cite).
 - `sample_displaced` samples from a state after the application of a random
   displacement channel.
 

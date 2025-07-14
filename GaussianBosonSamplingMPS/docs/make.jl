@@ -1,4 +1,4 @@
-using Documenter
+using Documenter, DocumenterCitations
 using ITensors, ITensorMPS, GaussianStates
 using GaussianBosonSamplingMPS
 
@@ -6,12 +6,15 @@ push!(LOAD_PATH, "../src/")
 # This line is needed because the GaussianBosonSamplingMPS is not accessible through Julia's
 # LOAD_PATH.
 
+bib = CitationBibliography(joinpath(@__DIR__, "src", "refs.bib"); style=:numeric)
+
 makedocs(;
     sitename="GaussianBosonSamplingMPS",
     modules=[GaussianBosonSamplingMPS],
     remotes=nothing,
     checkdocs=:exported,
     pages=["Home" => "index.md", "Reference" => "reference.md"],
+    plugins=[bib],
     format=Documenter.HTML(;
         mathengine=Documenter.MathJax(
             Dict(

@@ -7,9 +7,13 @@ Return the result of the function
   f(x,m) = \frac{2}{x+1} \biggl(\frac{x-1}{x+1}\biggr)^m
 ```
 
-mapping a symplectic eigenvalue `x` of a Gaussian state to the respective singular
-value associated to the `m`-photon state in the normal-mode decomposition (see [5],
-Eq. (3.60) at page 52).
+mapping a symplectic eigenvalue `x` of a Gaussian state to the respective singular value
+associated to the `m`-photon state in the normal-mode decomposition (see [Serafini2023; Eq.
+(3.60) at page 47](@cite).
+
+# References
+
+* [Serafini2023](@cite) Serafini, A. (2023)
 """
 function normal_mode_eigenvalue(symplectic_eigenvalue, number)
     z = symplectic_eigenvalue
@@ -85,9 +89,9 @@ end
 """
     normal_mode_decomposition(g::GaussianState, N, maxnumber; kwargs...)
 
-Compute the normal-mode decomposition ([1], Eq. (3.60) at page 52) of the Gaussian state `g`
-up to the `N` largest eigenvalues, calculated by considering only the `k`-particle sectors
-for `k ≤ maxnumber` on each mode.
+Compute the normal-mode decomposition [Serafini2023; Eq. (3.60) at page 47](@cite) of the
+Gaussian state `g` up to the `N` largest eigenvalues, calculated by considering only the
+`k`-particle sectors for `k ≤ maxnumber` on each mode.
 Return `vals, nums, S` where `vals` contains the eigenvalues in decreasing order, `nums`
 contains the occupation numbers of the Fock basis vector associated to the corresponding
 value in `vals`, and `S` is the symplectic matrix from the Williamson decomposition of `g`.
@@ -113,9 +117,7 @@ true
 
 # References
 
-[1] Serafini, A. (2017). Quantum Continuous Variables: A Primer of Theoretical Methods
-(1st ed.). CRC Press.
-[https://doi.org/10.1201/9781315118727](https://doi.org/10.1201/9781315118727)
+* [Serafini2023](@cite) Serafini, A. (2023)
 """
 function normal_mode_decomposition(g::GaussianState, N, maxnumber; kwargs...)
     D, S = williamson(Symmetric(g.covariance_matrix))

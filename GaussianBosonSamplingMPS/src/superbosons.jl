@@ -13,7 +13,11 @@ using ITensors.SiteTypes: SiteTypes, siteind, siteinds, state
     SuperBosonMPS
 
 A finite-size matrix-product state type that represents mixed states in the superboson
-formalism.
+formalism [Schmutz1978](@cite).
+
+# References
+
+* [Schmutz1978](@cite) Schmutz, M. _Z Physik B_ 30, 97–106 (1978)
 """
 mutable struct SuperBosonMPS <: AbstractMPS
     data::Vector{ITensor}
@@ -429,7 +433,8 @@ end
 """
     sb_siteinds(; nmodes, maxnumber)
 
-Return a list of ITensor site indices suited to define a superbosonic state, with alternating "physical" and "ancillary" sites.
+Return a list of ITensor site indices suited to define a superbosonic state, with
+alternating "physical" and "ancillary" sites.
 
 # Keyword arguments (mandatory)
 

@@ -18,7 +18,7 @@ end
 
 twomodesqueezing(ζ, n, k1, k2) = twomodesqueezing(Float64, ζ, n, k1, k2)
 
-# Eq. (65)-(66) in [1]
+# Eq. (65)-(66) in Quésada's paper
 # Construct the B(p) matrix with B[unroll(p), unroll(p)]
 unroll(p) = reduce(vcat, [repeat([i], p[i]) for i in eachindex(p)])
 
@@ -29,13 +29,18 @@ dirsum(A, B) = [A zeros(size(A, 1), size(B, 2)); zeros(size(B, 1), size(A, 2)) B
     franckcondon(m, Wₗ, S, Wᵣ, n)
 
 Compute the matrix element ``⟨m| D(α) U(W_l) U(S) U(W_r) |n⟩`` according to the algorithm
-presented in [2]. `Wₗ`, `S` and `Wᵣ` are symplectic matrices, in particular `Wₗ` and `Wᵣ`
+presented in Ref. [Quesada2019](@cite). `Wₗ`, `S` and `Wᵣ` are symplectic matrices, in
+particular `Wₗ` and `Wᵣ`
 are also orthogonal, and `α` is a complex vector (which defaults to the zero vector).
 If ``N`` is the number of modes of the system, then
 
 - `m` and `n` are tuples of ``N`` natural numbers,
 - `α` is a vector of ``N`` complex numbers,
 - `Wₗ`, `S` and `Wᵣ` are ``2N × 2N`` matrices.
+
+# References
+
+* [Quesada2019](@cite) Quesada, N. _J Chem Phys_ 150.16 (2019)
 """
 function franckcondon end
 
