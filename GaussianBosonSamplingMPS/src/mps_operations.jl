@@ -8,30 +8,10 @@ function ITensors.op(::OpName"p", st::SiteType"Boson", d::Int)
     return (op(OpName("a†"), st, d) - op(OpName("a"), st, d)) * im / sqrt(2)
 end
 
-function ITensors.op(::OpName"x²", st::SiteType"Boson", d::Int)
-    return op(OpName("x"), st, d)^2
-end
-
-function ITensors.op(::OpName"p²", st::SiteType"Boson", d::Int)
-    return op(OpName("p"), st, d)^2
-end
-
-function ITensors.op(::OpName"xp", st::SiteType"Boson", d::Int)
-    return op(OpName("x"), st, d) * op(OpName("p"), st, d)
-end
-
-function ITensors.op(::OpName"px", st::SiteType"Boson", d::Int)
-    return op(OpName("p"), st, d) * op(OpName("x"), st, d)
-end
-
 function firstmoments(v; warn_atol=1e-14)
-    @assert iseven(length(v))
-    nmodes = div(length(v), 2)
-
-    X = [LocalOperator(sb_index(j) => "x") for j in 1:nmodes]
-    P = [LocalOperator(sb_index(j) => "p") for j in 1:nmodes]
-    Ri = collect(Iterators.flatten(zip(X, P)))  # [X[1], P[1], X[2], P[2], ...]
-    r = measure(v, Ri)
+    # `expect(v, "x", "p")` returns the expectation values as the following tuple:
+    #   ([⟨x[1]⟩, ⟨x[2]⟩, ⟨x[N]⟩], [⟨p[1]⟩, ⟨p[2]⟩, ⟨p[N]⟩])
+    r = collect(Iterators.flatten(zip(expect(v, "x", "p")...)))
 
     if !isapprox(real(r), r) && norm(r) > warn_atol
         # It's not uncommon that the first moments are zero; in this case calling `isapprox`
@@ -43,31 +23,16 @@ function firstmoments(v; warn_atol=1e-14)
 end
 
 function covariancematrix(v; warn_atol=1e-14)
-    @assert iseven(length(v))
-    nmodes = div(length(v), 2)
-
     r = firstmoments(v; warn_atol=warn_atol)
-
-    Rij = Matrix{LocalOperator}(undef, 2nmodes, 2nmodes)
-    for i in 1:nmodes
-        Rij[2i - 1, 2i - 1] = LocalOperator(sb_index(i) => "x²")
-        Rij[2i - 1, 2i] = LocalOperator(sb_index(i) => "xp")
-        Rij[2i, 2i - 1] = LocalOperator(sb_index(i) => "px")
-        Rij[2i, 2i] = LocalOperator(sb_index(i) => "p²")
-    end
-
-    for i in 1:nmodes, j in 1:nmodes
-        if i != j
-            Rij[2i - 1, 2j - 1] = LocalOperator((sb_index(i) => "x", sb_index(j) => "x"))
-            Rij[2i - 1, 2j] = LocalOperator((sb_index(i) => "x", sb_index(j) => "p"))
-            Rij[2i, 2j - 1] = LocalOperator((sb_index(i) => "p", sb_index(j) => "x"))
-            Rij[2i, 2j] = LocalOperator((sb_index(i) => "p", sb_index(j) => "p"))
-        end
-    end
-
-    pre_σ = measure(v, Rij)  # this is tr(ρ RᵢRⱼ)
-    σ = pre_σ .+ transpose(pre_σ) .- 2r * transpose(r)
-
+    XX = correlation_matrix(v, "x", "x")
+    PP = correlation_matrix(v, "p", "p")
+    XP = correlation_matrix(v, "x", "p")
+    PX = correlation_matrix(v, "p", "x")
+    c = [
+        XX XP
+        PX PP
+    ]
+    σ = GaussianStates.permute_to_xpxp(c + transpose(c)) - 2kron(r, r')
     if !isapprox(real(σ), σ)
         # σ is never zero so we don't have to worry about using `isapprox` on zero
         @warn "covariance matrix is not real"
