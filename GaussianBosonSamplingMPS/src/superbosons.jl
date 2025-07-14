@@ -1,7 +1,6 @@
 using Random
 using ITensors: OneITensor, adapt, datatype
 using ITensors.SiteTypes: SiteTypes, siteind, siteinds, state
-using MPSTimeEvolution: LocalOperator, domain
 
 ### Type definition
 
@@ -28,7 +27,7 @@ end
 Return the number of "true" bosonic modes contained in the SuperBosonMPS `v`, i.e. half its
 actual length.
 """
-nmodes(v::SuperBosonMPS) = div(length(v), 2)
+GaussianStates.nmodes(v::SuperBosonMPS) = div(length(v), 2)
 
 sb_index(n) = 2n - 1  # mode number --> MPS site
 inv_sb_index(n) = div(n + 1, 2)  # MPS site --> mode number
@@ -272,32 +271,29 @@ end
 # means applying the "A" operator on the physical sites, leaving the ancillary sites alone,
 # then contracting each physical site with its ancillary companion.
 
-function _id_pairs(v::AbstractMPS)
-    nmodes = div(length(v), 2)
-
+function _id_pairs(v::SuperBosonMPS)
     maxn = dim(siteind(v, 1)) - 1
     return [
         sum(
             state(siteind(v, n), string(m)) * state(siteind(v, n + 1), string(m)) for
             m in 0:maxn
-        ) for n in sb_index.(1:nmodes)
+        ) for n in sb_index.(1:nmodes(v))
     ]
 end
 
-function _id_contractions(v::AbstractMPS)
-    nmodes = div(length(v), 2)
+function _id_contractions(v::SuperBosonMPS)
     sb_id_blocks = _id_pairs(v)
     return [
-        dag(sb_id_blocks[inv_sb_index(n)]) * v[n] * v[n + 1] for n in sb_index.(1:nmodes)
+        dag(sb_id_blocks[inv_sb_index(n)]) * v[n] * v[n + 1] for n in sb_index.(1:nmodes(v))
     ]
 end
 
 """
-    expect(psi::SuperBosonMPS, op::AbstractString...; kwargs...)
-    expect(psi::SuperBosonMPS, op::Matrix{<:Number}...; kwargs...)
-    expect(psi::SuperBosonMPS, ops; kwargs...)
+    expect(v::SuperBosonMPS, op::AbstractString...; kwargs...)
+    expect(v::SuperBosonMPS, op::Matrix{<:Number}...; kwargs...)
+    expect(v::SuperBosonMPS, ops; kwargs...)
 
-Given an SuperBosonMPS `psi` and a single operator name, returns a vector of the expected
+Given an SuperBosonMPS `v` and a single operator name, returns a vector of the expected
 value of the operator on each site of the SuperBosonMPS.
 
 If multiple operator names are provided, returns a tuple of expectation value vectors.
@@ -307,7 +303,7 @@ replaced by vectors of expectation values.
 
 # Optional keyword arguments
 
-  - `sites = 1:length(psi)`: compute expected values only for modes in the given range
+  - `sites = 1:length(v)`: compute expected values only for modes in the given range
 
 # Examples
 
@@ -315,19 +311,19 @@ replaced by vectors of expectation values.
 N = 10
 
 s = sb_siteinds("Boson", N)
-psi = sb_outer(random_mps(s; linkdims=4))
-expect(psi, "N")  # compute for all sites
-expect(psi, "N"; sites=2:4)  # compute for sites 2, 3 and 4
-expect(psi, "N"; sites=3)  # compute for site 3 only (output will be a scalar)
-expect(psi, ["A*Adag", "N"])  # compute A*Adag and N for all sites
-expect(psi, [0 0; 0 1])  # same as expect(psi, "N") if maxnumber == 1
+v = sb_outer(random_mps(s; linkdims=4))
+expect(v, "N")  # compute for all sites
+expect(v, "N"; sites=2:4)  # compute for sites 2, 3 and 4
+expect(v, "N"; sites=3)  # compute for site 3 only (output will be a scalar)
+expect(v, ["A*Adag", "N"])  # compute A*Adag and N for all sites
+expect(v, [0 0; 0 1])  # same as expect(v, "N") if maxnumber == 1
 ```
 """
-function ITensorMPS.expect(psi::SuperBosonMPS, ops; sites=1:div(length(psi), 2))
-    #psi = copy(psi)
-    N = div(length(psi), 2)
-    ElT = ITensorMPS.scalartype(psi)
-    s = siteinds(psi)
+function ITensorMPS.expect(v::SuperBosonMPS, ops; sites=1:nmodes(v))
+    N = nmodes(v)
+    #v = copy(v)
+    ElT = ITensorMPS.scalartype(v)
+    s = siteinds(v)
 
     site_range = (sites isa AbstractRange) ? sites : collect(sites)
     Ns = length(site_range)
@@ -335,27 +331,27 @@ function ITensorMPS.expect(psi::SuperBosonMPS, ops; sites=1:div(length(psi), 2))
 
     el_types = map(o -> ishermitian(op(o, s[sb_index(start_site)])) ? real(ElT) : ElT, ops)
 
-    sb_id_blocks = _id_pairs(psi)
-    ids = _id_contractions(psi)
-    tr_psi = scalar(prod(ids))
-    iszero(tr_psi) && error("SuperBosonMPS has zero trace in function `expect`")
+    sb_id_blocks = _id_pairs(v)
+    ids = _id_contractions(v)
+    tr_v = scalar(prod(ids))
+    iszero(tr_v) && error("SuperBosonMPS has zero trace in function `expect`")
 
     ex = map((o, el_t) -> zeros(el_t, Ns), ops, el_types)
     for (entry, j) in enumerate(site_range)
         for (n, opname) in enumerate(ops)
-            oⱼ = ITensors.adapt(ITensors.datatype(psi[j]), op(opname, s[sb_index(j)]))
+            oⱼ = adapt(datatype(v[j]), op(opname, s[sb_index(j)]))
             x = OneITensor()
             for n in 1:N
                 if n == j
                     x *=
                         dag(apply(adj(oⱼ), sb_id_blocks[n])) *
-                        psi[sb_index(n)] *
-                        psi[sb_index(n) + 1]
+                        v[sb_index(n)] *
+                        v[sb_index(n) + 1]
                 else
                     x *= ids[n]
                 end
             end
-            val = scalar(x) / tr_psi
+            val = _sb_contract_with_observable(v, sb_id_blocks, ids, oⱼ, j) / tr_v
             ex[n][entry] = (el_types[n] <: Real) ? real(val) : val
         end
     end
@@ -424,85 +420,6 @@ function ITensorMPS.expect(
 end
 
 adj(x) = swapprime(dag(x), 0 => 1)
-
-function measure(v::AbstractMPS, l::LocalOperator)
-    nmodes = div(length(v), 2)
-    sb_id_blocks = _id_pairs(v)
-    ids = _id_contractions(v)
-
-    x = OneITensor()
-    for n in sb_index.(1:nmodes)
-        if n in domain(l)
-            lop = if n + 1 in domain(l)
-                # We loop over odd sites only, so we check manually that the next site
-                # is in the domain of the operator.
-                op(l[n], siteind(v, n)) * op(l[n + 1], siteind(v, n + 1))
-            else
-                op(l[n], siteind(v, n))
-            end
-            x *= dag(apply(adj(lop), sb_id_blocks[inv_sb_index(n)])) * v[n] * v[n + 1]
-        else
-            x *= ids[inv_sb_index(n)]
-        end
-    end
-    return scalar(x)
-end
-
-function measure(v::AbstractMPS, ls::Vector{LocalOperator})
-    nmodes = div(length(v), 2)
-
-    sb_id_blocks = _id_pairs(v)
-    ids = _id_contractions(v)
-
-    results = Vector{ComplexF64}(undef, length(ls))
-    for (j, l) in enumerate(ls)
-        x = OneITensor()
-        for n in sb_index.(1:nmodes)
-            if n in domain(l)
-                lop = if n + 1 in domain(l)
-                    # We loop over odd sites only, so we check manually that the next site
-                    # is in the domain of the operator.
-                    op(l[n], siteind(v, n)) * op(l[n + 1], siteind(v, n + 1))
-                else
-                    op(l[n], siteind(v, n))
-                end
-                x *= dag(apply(adj(lop), sb_id_blocks[inv_sb_index(n)])) * v[n] * v[n + 1]
-            else
-                x *= ids[inv_sb_index(n)]
-            end
-        end
-        results[j] = scalar(x)
-    end
-    return results
-end
-
-function measure(v::AbstractMPS, ls::Matrix{LocalOperator})
-    nmodes = div(length(v), 2)
-
-    sb_id_blocks = _id_pairs(v)
-    ids = _id_contractions(v)
-
-    results = Matrix{ComplexF64}(undef, size(ls))
-    for (j, l) in enumerate(ls)
-        x = OneITensor()
-        for n in sb_index.(1:nmodes)
-            if n in domain(l)
-                lop = if n + 1 in domain(l)
-                    # We loop over odd sites only, so we check manually that the next site
-                    # is in the domain of the operator.
-                    op(l[n], siteind(v, n)) * op(l[n + 1], siteind(v, n + 1))
-                else
-                    op(l[n], siteind(v, n))
-                end
-                x *= dag(apply(adj(lop), sb_id_blocks[inv_sb_index(n)])) * v[n] * v[n + 1]
-            else
-                x *= ids[inv_sb_index(n)]
-            end
-        end
-        results[j] = scalar(x)
-    end
-    return results
-end
 
 function LinearAlgebra.tr(v::SuperBosonMPS)
     return scalar(prod(_id_contractions(v)))
@@ -663,7 +580,7 @@ end
 function ITensorMPS.sample(rng::AbstractRNG, m::SuperBosonMPS)
     # See https://tensornetwork.org/mps/algorithms/sampling for an explanation of this MPS
     # sampling algorithm.
-    nmodes = div(length(m), 2)
+    N = nmodes(m)
 
     trace_m = tr(m)
     if abs(1.0 - trace_m) > 1E-8
@@ -671,7 +588,7 @@ function ITensorMPS.sample(rng::AbstractRNG, m::SuperBosonMPS)
     end
 
     ids = _id_contractions(m)
-    contractions_from_right = Vector{Union{ITensor,OneITensor}}(undef, nmodes)
+    contractions_from_right = Vector{Union{ITensor,OneITensor}}(undef, N)
     # We want:
     #   contractions_from_right[end] = 1
     #   contractions_from_right[end-1] = ids[end]
@@ -690,9 +607,9 @@ function ITensorMPS.sample(rng::AbstractRNG, m::SuperBosonMPS)
     # Basically contractions_from_right[k] is the reduced state after the partial trace
     # over all modes > k.
 
-    result = Vector{Int}(undef, nmodes)
+    result = Vector{Int}(undef, N)
     prev = OneITensor()
-    for j in 1:nmodes
+    for j in 1:N
         ρ = prev * m[sb_index(j)] * m[sb_index(j) + 1] * contractions_from_right[j]
         sl = siteind(m, sb_index(j))
         sr = siteind(m, sb_index(j)+1)
@@ -708,7 +625,7 @@ function ITensorMPS.sample(rng::AbstractRNG, m::SuperBosonMPS)
         n = randsample(1:d, pn)
         result[j] = n
 
-        if j < nmodes
+        if j < N
             prev *=
                 onehot(sl => n) * m[sb_index(j)] * m[sb_index(j) + 1] * onehot(sr => n) /
                 pn[n]
@@ -757,7 +674,9 @@ julia> correlation_matrix(vac, "p", "x")
  0.0+0.0im  0.0+0.0im  0.0-0.5im
 ```
 """
-function ITensorMPS.correlation_matrix(v::SuperBosonMPS, Op1, Op2; sites=1:nmodes(v), ishermitian=nothing)
+function ITensorMPS.correlation_matrix(
+    v::SuperBosonMPS, Op1, Op2; sites=1:nmodes(v), ishermitian=nothing
+)
     if !(sites isa AbstractRange)
         sites = collect(sites)
     end
@@ -805,7 +724,8 @@ function ITensorMPS.correlation_matrix(v::SuperBosonMPS, Op1, Op2; sites=1:nmode
 
     for (ni, i) in enumerate(sites[1:(end - 1)])
         # Get j == i diagonal correlations
-        oᵢ = adapt(datatype(v[sb_index(i)]), op(onsiteOp, s, sb_index(i)))  # remember: onsiteOp = Op1 * Op2
+        oᵢ = adapt(datatype(v[sb_index(i)]), op(onsiteOp, s, sb_index(i)))
+        # remember: onsiteOp = Op1 * Op2
         C[ni, ni] = _sb_contract_with_observable(v, sb_id_blocks, ids, oᵢ, i) / tr_v
 
         oᵢ = adapt(datatype(v[sb_index(i)]), op(Op1, s, sb_index(i)))
@@ -814,8 +734,7 @@ function ITensorMPS.correlation_matrix(v::SuperBosonMPS, Op1, Op2; sites=1:nmode
             # Get j > i diagonal correlations
             oⱼ = adapt(datatype(v[sb_index(j)]), op(Op2, s, sb_index(j)))
             C[ni, nj] =
-                _sb_contract_with_2observables(v, sb_id_blocks, ids, oᵢ, i, oⱼ, j) /
-                tr_v
+                _sb_contract_with_2observables(v, sb_id_blocks, ids, oᵢ, i, oⱼ, j) / tr_v
             if is_cm_hermitian
                 C[nj, ni] = conj(C[ni, nj])
             end
@@ -828,7 +747,7 @@ function ITensorMPS.correlation_matrix(v::SuperBosonMPS, Op1, Op2; sites=1:nmode
             oᵢ = adapt(datatype(v[sb_index(i)]), op(Op2, s, sb_index(i)))
 
             for (n, j) in enumerate(sites[(ni + 1):end])
-            nj = ni + n
+                nj = ni + n
                 oⱼ = adapt(datatype(v[sb_index(j)]), op(Op1, s, sb_index(j)))
                 C[nj, ni] =
                     _sb_contract_with_2observables(v, sb_id_blocks, ids, oᵢ, i, oⱼ, j) /
