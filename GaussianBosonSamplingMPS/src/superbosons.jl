@@ -426,6 +426,29 @@ function LinearAlgebra.tr(v::SuperBosonMPS)
     return scalar(prod(_id_contractions(v)))
 end
 
+"""
+    sb_siteinds(; nmodes, maxnumber)
+
+Return a list of ITensor site indices suited to define a superbosonic state, with alternating "physical" and "ancillary" sites.
+
+# Keyword arguments (mandatory)
+
+- `nmodes`: the number of "real-world" bosonic modes of the system (the actual MPS will
+  have `2nmodes` sites).
+- `maxnumber`: maximum number of bosons allowed on each site. The local Hilbert spaces
+  will be truncated to a dimension of `maxnumber+1`.
+
+# Example
+
+```julia-repl
+julia> sb_siteinds(; nmodes=2, maxnumber=4)
+4-element Vector{Index{Int64}}:
+ (dim=5|id=962|"Boson,Site,n=1,phy")
+ (dim=5|id=41|"Boson,Site,anc,n=1")
+ (dim=5|id=794|"Boson,Site,n=2,phy")
+ (dim=5|id=198|"Boson,Site,anc,n=2")
+```
+"""
 function sb_siteinds(; nmodes, maxnumber)
     sites_phy = siteinds("Boson", nmodes; dim=maxnumber+1, addtags="phy")
     sites_anc = siteinds("Boson", nmodes; dim=maxnumber+1, addtags="anc")
