@@ -1,3 +1,6 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 GaussianBosonSamplingMPS = "ab5b1ad5-4448-4875-a3d4-2d0e76b80af8"
+GaussianStates = "87be6f6c-69b0-4e4f-9c30-808c15aab153"
+ITensorMPS = "0d1a4710-d33b-49a5-8f18-73bdf49b47e2"
+ITensors = "9136182c-28ba-11e9-034c-db9fb085ebd5"

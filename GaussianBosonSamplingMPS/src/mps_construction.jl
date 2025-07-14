@@ -29,18 +29,13 @@ dirsum(A, B) = [A zeros(size(A, 1), size(B, 2)); zeros(size(B, 1), size(A, 2)) B
     franckcondon(m, Wₗ, S, Wᵣ, n)
 
 Compute the matrix element ``⟨m| D(α) U(W_l) U(S) U(W_r) |n⟩`` according to the algorithm
-presented in [1]. `Wₗ`, `S` and `Wᵣ` are symplectic matrices, in particular `Wₗ` and `Wᵣ`
+presented in [2]. `Wₗ`, `S` and `Wᵣ` are symplectic matrices, in particular `Wₗ` and `Wᵣ`
 are also orthogonal, and `α` is a complex vector (which defaults to the zero vector).
 If ``N`` is the number of modes of the system, then
 
 - `m` and `n` are tuples of ``N`` natural numbers,
 - `α` is a vector of ``N`` complex numbers,
 - `Wₗ`, `S` and `Wᵣ` are ``2N × 2N`` matrices.
-
-# References
-
-[1] Nicolás Quesada, ‘Franck-Condon factors by counting perfect matchings of graphs with
-loops’. [The Journal of Chemical Physics 150.16 (2019)](https://doi.org/10.1063/1.5086387).
 """
 function franckcondon end
 
@@ -292,14 +287,14 @@ function ITensorMPS.MPS(g::GaussianState; maxdim, maxnumber, kwargs...)
 end
 
 """
-    enlargelocaldim(v::MPS, newdim)
+    enlargelocaldim(v::AbstractMPS, newdim)
 
 Return a new MPS with the local dimension increased to `newdim`.
 
 Note that the new MPS will be defined on a new set of site indices, so it will be
 incompatible with the original one.
 """
-function enlargelocaldim(v::MPS, newdim)
+function enlargelocaldim(v::AbstractMPS, newdim)
     # Strategy: let `A[k, iₖ]` be the matrices from `v`. We build a new MPS with matrices
     # `B[k, iₖ]` with the same bond dimensions, but bigger physical dimension (we'll need to
     # create a different set of site indices), then set `B[k, iₖ]` equal to `A[k, iₖ]` if

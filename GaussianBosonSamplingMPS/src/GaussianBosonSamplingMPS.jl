@@ -9,6 +9,7 @@ using ProgressMeter
 # Optimisation
 using SCS, JuMP
 
+export normal_mode_decomposition, franckcondon
 include("normal_mode_decomposition.jl")
 include("hafnian.jl")
 

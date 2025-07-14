@@ -23,6 +23,8 @@ ported from _The Walrus_ [3].
    [_Journal of Open Source Software_, 4(44), 1705 (2019)](https://joss.theoj.org/papers/10.21105/joss.01705)
 4. Manfred Schmutz. ‘Real-Time Green’s Functions in Many Body Problems’.
    [_Zeitschrift für Physik B Condensed Matter_, 30.1 (1978)](https://doi.org/10.1007/BF01323673)
+5. Alessio Serafini. [‘Quantum Continuous Variables: A Primer of Theoretical
+   Methods’. (2017, 2nd ed.). CRC Press.](https://doi.org/10.1201/9781315118727)
 
 ## Package features
 
@@ -35,10 +37,3 @@ ported from _The Walrus_ [3].
 - Find an approximate MPS representation of a Gaussian state in the Fock basis
 - Sample from the outcome of a lossy Gaussian boson sampling experiment with
   the classical MPS-based algorithm described in [1].
-
-## Public functions
-
-```@autodocs
-Modules = [GaussianBosonSamplingMPS]
-Order   = [:function, :type]
-```

@@ -1,4 +1,5 @@
 using Documenter
+using ITensors, ITensorMPS, GaussianStates
 using GaussianBosonSamplingMPS
 
 push!(LOAD_PATH, "../src/")
@@ -9,6 +10,8 @@ makedocs(;
     sitename="GaussianBosonSamplingMPS",
     modules=[GaussianBosonSamplingMPS],
     remotes=nothing,
+    checkdocs=:exported,
+    pages=["Home" => "index.md", "Reference" => "reference.md"],
     format=Documenter.HTML(;
         mathengine=Documenter.MathJax(
             Dict(

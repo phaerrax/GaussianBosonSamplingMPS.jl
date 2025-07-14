@@ -8,14 +8,8 @@ Return the result of the function
 ```
 
 mapping a symplectic eigenvalue `x` of a Gaussian state to the respective singular
-value associated to the `m`-photon state in the normal-mode decomposition (see [1],
+value associated to the `m`-photon state in the normal-mode decomposition (see [5],
 Eq. (3.60) at page 52).
-
-# References
-
-[1] Serafini, A. (2017). Quantum Continuous Variables: A Primer of Theoretical Methods
-(1st ed.). CRC Press.
-[https://doi.org/10.1201/9781315118727](https://doi.org/10.1201/9781315118727)
 """
 function normal_mode_eigenvalue(symplectic_eigenvalue, number)
     z = symplectic_eigenvalue

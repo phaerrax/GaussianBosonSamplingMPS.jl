@@ -15,7 +15,7 @@ Return `s, αs` such that:
 
 The `eval_atol` keyword argument is used as threshold to decide whether an eigenvalue of `W`
 must be considered zero (usually it should be of the same order of the `eps` tolerances of
-the `SCS` optimiser).
+the SCS optimiser).
 """
 function sample_displaced(
     ψ::MPS, W; nsamples, nsamples_per_displacement, eval_atol=0, kwargs...

@@ -8,6 +8,15 @@ function ITensors.op(::OpName"p", st::SiteType"Boson", d::Int)
     return (op(OpName("a†"), st, d) - op(OpName("a"), st, d)) * im / sqrt(2)
 end
 
+"""
+    firstmoments(v; warn_atol=1e-14)
+
+Compute the first moments of the state `v`; return a vector in the `xpxp` order, i.e. the
+vector ``(⟨x_1⟩, ⟨p_1⟩, ⟨x_2⟩, ⟨p_2⟩, ..., ⟨x_N⟩, ⟨p_N⟩)``.
+
+The `warn_atol` keyword argument can be used to adjust the threshold used by the function
+to warn when the moments are not real.
+"""
 function firstmoments(v; warn_atol=1e-14)
     # `expect(v, "x", "p")` returns the expectation values as the following tuple:
     #   ([⟨x[1]⟩, ⟨x[2]⟩, ⟨x[N]⟩], [⟨p[1]⟩, ⟨p[2]⟩, ⟨p[N]⟩])
@@ -22,6 +31,14 @@ function firstmoments(v; warn_atol=1e-14)
     return real(r)
 end
 
+"""
+    covariancematrix(v; warn_atol=1e-14)
+
+Compute the covariance matrix of the state `v`, in the `xpxp` order.
+
+The `warn_atol` keyword argument can be used to adjust the threshold used by the function
+to warn when the moments are not real.
+"""
 function covariancematrix(v; warn_atol=1e-14)
     r = firstmoments(v; warn_atol=warn_atol)
     XX = correlation_matrix(v, "x", "x")
@@ -66,7 +83,7 @@ end
     attenuate(v::SuperBosonMPS, attenuation, n)
 
 Apply on mode `n` the attenuator channel ``ρ ↦ \sum_{k=0}^{+∞} B_k ρ \adj{B_k}`` on the MPS
-`v` representing the state ``ρ`` in the superboson formalism.
+`v` representing the state ``ρ`` in the superboson formalism, where
 
 ```math
 B_k = \sum_{m=0}^{+∞} \binom{m+k}{k}^{\frac12} (1-η^2)^{\frac{k}{2}} η^m |m⟩⟨m+k|
@@ -87,6 +104,11 @@ function ITensors.op(::OpName"squeezer", st::SiteType"Boson", d::Int; squeeze)
     return exp(s/2)
 end
 
+"""
+    squeeze(v::SuperBosonMPS, n, z; kwargs...)
+
+Apply the squeezing operator with parameter `z` on mode `n` to the state represented by `v`.
+"""
 function GaussianStates.squeeze(v::SuperBosonMPS, n, z; kwargs...)
     phy, anc = siteind(v, sb_index(n)), siteind(v, sb_index(n)+1)
 
@@ -96,6 +118,12 @@ function GaussianStates.squeeze(v::SuperBosonMPS, n, z; kwargs...)
     return apply(conj(sq_anc), v; kwargs...)
 end
 
+"""
+    squeeze(v::SuperBosonMPS, z; kwargs...)
+
+Apply the squeezing operator with parameter `z_i` on each mode `i` to the state represented
+by `v`.
+"""
 function GaussianStates.squeeze(v::SuperBosonMPS, z; kwargs...)
     @assert length(v) == 2length(z)
     for j in eachindex(z)
@@ -116,6 +144,12 @@ function ITensors.op(
     return exp(θ * b)
 end
 
+"""
+    beamsplitter(v::SuperBosonMPS, transmittivity, n1, n2; kwargs...)
+
+Apply a beam-splitter operator on modes `n1` and `n2` with given `transmittivity` to the
+state represented by `v`.
+"""
 function GaussianStates.beamsplitter(v::SuperBosonMPS, transmittivity, n1, n2; kwargs...)
     phy1, anc1 = siteind(v, sb_index(n1)), siteind(v, sb_index(n1)+1)
     phy2, anc2 = siteind(v, sb_index(n2)), siteind(v, sb_index(n2)+1)

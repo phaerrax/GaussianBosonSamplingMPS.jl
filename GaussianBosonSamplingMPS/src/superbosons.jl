@@ -13,7 +13,7 @@ using ITensors.SiteTypes: SiteTypes, siteind, siteinds, state
     SuperBosonMPS
 
 A finite-size matrix-product state type that represents mixed states in the superboson
-formalism (Schmutz, 1978).
+formalism.
 """
 mutable struct SuperBosonMPS <: AbstractMPS
     data::Vector{ITensor}
@@ -294,8 +294,8 @@ end
     expect(v::SuperBosonMPS, op::Matrix{<:Number}...; kwargs...)
     expect(v::SuperBosonMPS, ops; kwargs...)
 
-Given an SuperBosonMPS `v` and a single operator name, returns a vector of the expected
-value of the operator on each site of the SuperBosonMPS.
+Given a superbosonic MPS `v` and a single operator name or matrix, returns a vector of the
+expected value of the operator on each site of the SuperBosonMPS.
 
 If multiple operator names are provided, returns a tuple of expectation value vectors.
 
@@ -304,7 +304,7 @@ replaced by vectors of expectation values.
 
 # Optional keyword arguments
 
-  - `sites = 1:length(v)`: compute expected values only for modes in the given range
+  - `sites = 1:nmodes(v)`: compute expected values only for modes in the given range
 
 # Examples
 
@@ -456,10 +456,10 @@ function sb_siteinds(; nmodes, maxnumber)
 end
 
 """
-    sb_outer(v::MPS)
+    sb_outer(ψ::MPS)
 
-Compute the projection operator ``|v⟩⟨v| / ‖v‖²``, from the MPS `v` representing a pure
-state, expressed as an MPS (of double the size) in the superboson formalism.
+Compute the projection operator ``|ψ⟩⟨ψ| / ‖ψ‖²``, from the MPS `ψ` representing a pure
+state, returning a `SuperBosonMPS` object (of double the size).
 """
 function sb_outer(v)
     # 1) We build the MPO representing Pv = |v⟩⟨v| / ‖v‖² starting from the input MPS.
@@ -665,13 +665,13 @@ end
 
 Given a SuperBosonMPS `v` representing a state ``ρ`` and two strings or matrices `A` and `B`
 denoting operators (as recognized by the `op` function), computes the two-point correlation
-function matrix ``C_{ij} = tr(A_i B_j ρ)`` using efficient MPS techniques. Returns the
-matrix `C`.
+function matrix ``C_{ij} = \\textrm{tr}(A_i B_j ρ)`` using efficient MPS techniques. Returns
+the matrix `C`.
 
 # Optional keyword arguments
 
-  - `sites = 1:nmodes(v)`: compute correlations only for sites in the given range
-  - `ishermitian = false` : if `false`, force independent calculations of the matrix
+- `sites = 1:nmodes(v)`: compute correlations only for sites in the given range
+- `ishermitian = false` : if `false`, force independent calculations of the matrix
   elements above and below the diagonal, while if `true` assume they are complex conjugates.
 
 # Examples
