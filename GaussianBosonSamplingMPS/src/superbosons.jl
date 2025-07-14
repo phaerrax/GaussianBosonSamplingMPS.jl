@@ -63,20 +63,16 @@ function SuperBosonMPS(A::Vector{<:ITensor}; ortho_lims::UnitRange=1:length(A))
     return SuperBosonMPS(A, first(ortho_lims) - 1, last(ortho_lims) + 1)
 end
 
-"""
-    SuperBosonMPS()
-
-Construct an empty `SuperBosonMPS` with zero sites.
-"""
 SuperBosonMPS() = SuperBosonMPS(ITensor[], 0, 0)
+# Construct an empty `SuperBosonMPS` with zero sites.
 
-"""
-    SuperBosonMPS(N::Int)
-
-Construct a `SuperBosonMPS` with `N` sites with default-constructed ITensors.
-"""
 function SuperBosonMPS(N::Int; ortho_lims::UnitRange=1:N)
-    if !iseven(length(sites))
+    # Construct a `SuperBosonMPS` with `N` sites with default-constructed ITensors.
+    #
+    # Beware that `N` is the number of the actual MPS sites, and not the number of modes of
+    # the state represented by the `SuperBosonMPS` object. (This is a default constructor
+    # that is not meant to be called directly.)
+    if !iseven(N)
         error("SuperBosonMPS: number of sites is not even")
     end
 
