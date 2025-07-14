@@ -143,27 +143,32 @@ function SuperBosonMPS(eltype::Type{<:Number}, sites::Vector{<:Index}, states_)
         )
     end
     N = 2length(states_)
-    M = SuperBosonMPS(length(states_))
+    M = SuperBosonMPS(N)
 
-    links = [Index(1; tags="Link,l=$n") for n in 1:N]
+    links = [Index(1; tags="Link,l=$n") for n in 1:(N - 1)]
 
-    M[1] = state(sites[1], states_[1]) * state(links[1], 1)
-    M[2] = state(dag(links[1]), 1) * state(sites[2], states_[1]) * state(links[2], 1)
-    for n in 3:2:(N - 2)
-        M[n] =
-            state(dag(links[n - 1]), 1) *
-            state(sites[n], states_[inv_sb_index(n)]) *
-            state(links[n], 1)
-        M[n + 1] =
-            state(dag(links[n]), 1) *
-            state(sites[n + 1], states_[inv_sb_index(n)]) *
-            state(links[n + 1], 1)
+    if N == 2
+        M[1] = state(sites[1], states_[1]) * state(links[1], 1)
+        M[2] = state(dag(links[1]), 1) * state(sites[2], states_[1])
+    else
+        M[1] = state(sites[1], states_[1]) * state(links[1], 1)
+        M[2] = state(dag(links[1]), 1) * state(sites[2], states_[1]) * state(links[2], 1)
+        for n in 3:2:(N - 2)
+            M[n] =
+                state(dag(links[n - 1]), 1) *
+                state(sites[n], states_[inv_sb_index(n)]) *
+                state(links[n], 1)
+            M[n + 1] =
+                state(dag(links[n]), 1) *
+                state(sites[n + 1], states_[inv_sb_index(n)]) *
+                state(links[n + 1], 1)
+        end
+        M[N - 1] =
+            state(dag(links[N - 2]), 1) *
+            state(sites[N - 1], states_[inv_sb_index(N)]) *
+            state(links[N - 1], 1)
+        M[N] = state(dag(links[N - 1]), 1) * state(sites[N], states_[inv_sb_index(N)])
     end
-    M[N - 1] =
-        state(dag(links[N - 2]), 1) *
-        state(sites[N - 1], states_[inv_sb_index(N)]) *
-        state(links[N - 1], 1)
-    M[N] = state(dag(links[N - 1]), 1) * state(sites[N], states_[inv_sb_index(N)])
 
     return convert_leaf_eltype(eltype, M)
 end
