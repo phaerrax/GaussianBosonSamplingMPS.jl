@@ -63,7 +63,7 @@ function ITensors.op(::OpName"attenuator", ::SiteType"Boson", d1::Int, d2::Int; 
 end
 
 @doc raw"""
-    attenuate(v::MPS, attenuation, n)
+    attenuate(v::SuperBosonMPS, attenuation, n)
 
 Apply on mode `n` the attenuator channel ``ρ ↦ \sum_{k=0}^{+∞} B_k ρ \adj{B_k}`` on the MPS
 `v` representing the state ``ρ`` in the superboson formalism.
@@ -75,7 +75,7 @@ B_k = \sum_{m=0}^{+∞} \binom{m+k}{k}^{\frac12} (1-η^2)^{\frac{k}{2}} η^m |m�
 and ``η`` is the attenuation coefficient, such that ``\sum_{k=0}^{+\infty} B_k ρ \adj{B_k}``
 is equal to ``|0⟩⟨0|`` when ``η = 0`` and to ``ρ`` when ``η = 1``.
 """
-function attenuate(v::MPS, attenuation, n; kwargs...)
+function attenuate(v::SuperBosonMPS, attenuation, n; kwargs...)
     sp, sa = siteind(v, sb_index(n)), siteind(v, sb_index(n)+1)
     return apply(op("attenuator", sp, sa; attenuation=attenuation), v; kwargs...)
 end
@@ -87,7 +87,7 @@ function ITensors.op(::OpName"squeezer", st::SiteType"Boson", d::Int; squeeze)
     return exp(s/2)
 end
 
-function GaussianStates.squeeze(v::MPS, n, z; kwargs...)
+function GaussianStates.squeeze(v::SuperBosonMPS, n, z; kwargs...)
     phy, anc = siteind(v, sb_index(n)), siteind(v, sb_index(n)+1)
 
     sq_phy = op("squeezer", phy; squeeze=z)
@@ -96,7 +96,7 @@ function GaussianStates.squeeze(v::MPS, n, z; kwargs...)
     return apply(conj(sq_anc), v; kwargs...)
 end
 
-function GaussianStates.squeeze(v::MPS, z; kwargs...)
+function GaussianStates.squeeze(v::SuperBosonMPS, z; kwargs...)
     @assert length(v) == 2length(z)
     for j in eachindex(z)
         sq_phy = op("squeezer", siteind(v, sb_index(j)); squeeze=z[j])
@@ -116,7 +116,7 @@ function ITensors.op(
     return exp(θ * b)
 end
 
-function GaussianStates.beamsplitter(v::MPS, transmittivity, n1, n2; kwargs...)
+function GaussianStates.beamsplitter(v::SuperBosonMPS, transmittivity, n1, n2; kwargs...)
     phy1, anc1 = siteind(v, sb_index(n1)), siteind(v, sb_index(n1)+1)
     phy2, anc2 = siteind(v, sb_index(n2)), siteind(v, sb_index(n2)+1)
 
@@ -136,12 +136,12 @@ function ITensors.op(::OpName"displace", st::SiteType"Boson", d::Int; α)
 end
 
 """
-    displace_pure(m::MPS, α; kwargs...)
+    displace(m::MPS, α; kwargs...)
 
 Apply a product of single-mode displacement operators on the pure state represented by the
 MPS `m`, with parameter `α[j]` on mode `j`.
 """
-function displace_pure(m::MPS, α; kwargs...)
+function GaussianStates.displace(m::MPS, α; kwargs...)
     @assert length(m) == length(α)
     displacement_ops = [op("displace", siteind(m, j); α=α[j]) for j in eachindex(m)]
     return apply(displacement_ops, m; kwargs...)
@@ -151,9 +151,9 @@ end
     displace(v::MPS, α; kwargs...)
 
 Apply a product of single-mode displacement operators, with parameter `α[j]` on mode `j`,
-on the mixed state represented by the MPS `m` in the superboson formalism.
+on the mixed state represented by the SuperBosonMPS `v` in the superboson formalism.
 """
-function GaussianStates.displace(v::MPS, α; kwargs...)
+function GaussianStates.displace(v::SuperBosonMPS, α; kwargs...)
     @assert iseven(length(v))
     nmodes = div(length(v), 2)
     @assert nmodes == length(α)
