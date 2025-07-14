@@ -560,7 +560,7 @@ end
 """
     sample(m::SuperBosonMPS)
 
-Given a "superbosonic" MPS `m` with unit trace, compute a `Vector{Int}` of `length(m)/2`
+Given a "superbosonic" MPS `m` with unit trace, compute a `Vector{Int}` of `nmodes(m)`
 elements corresponding to one sample of the probability distribution defined by the
 components of the density matrix that the MPS represents.
 """
@@ -568,12 +568,8 @@ function ITensorMPS.sample(m::SuperBosonMPS)
     return sample(Random.default_rng(), m)
 end
 
-"""
-    randsample(values, weights)
-
-Draw an element from `values`, such that `values[i]` has weight `weights[i]`.
-"""
 function randsample(values, weights)
+    # Draw an element from `values`, such that `values[i]` has weight `weights[i]`.
     odds = cumsum(weights ./ sum(weights))
     return values[findfirst(odds .≥ rand())]
 end
