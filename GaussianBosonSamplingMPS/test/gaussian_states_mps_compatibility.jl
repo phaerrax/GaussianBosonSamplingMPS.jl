@@ -1,8 +1,16 @@
 @testset "First and second moments from MPS" begin
     nmodes = 6
     maxnumber = 4
+
+    # With mixed states
     sites = sb_siteinds(; nmodes=nmodes, maxnumber=maxnumber)
-    v = MPS(sites, "0")
+    v = MPS(ComplexF64, sites, "0")
+    @test iszero(firstmoments(v))
+    @test covariancematrix(v) ≈ I
+
+    # With pure states
+    sites = siteinds("Boson", nmodes; dim=maxnumber+1)
+    v = MPS(ComplexF64, sites, "0")
     @test iszero(firstmoments(v))
     @test covariancematrix(v) ≈ I
 end
@@ -28,5 +36,5 @@ const rtol = 1e-6
     vv = sb_outer(v)
     #@test firstmoments(vv) ≈ 0 won't work, we can't use `isapprox` with zero
     @test norm(firstmoments(vv)) < atol
-    @test isapprox(covariancematrix(vv), g.covariance_matrix; rtol=rtol)
+    @test covariancematrix(vv) ≈ g.covariance_matrix rtol=rtol
 end

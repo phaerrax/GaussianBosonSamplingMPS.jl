@@ -3,11 +3,20 @@
     maxnumber = 5
     s = siteinds("Boson", nmodes; dim=maxnumber+1)
 
-    @testset "Measurements" begin
-        v = random_mps(s; linkdims=10)
+    @testset "Expectation values" begin
+        v = random_mps(ComplexF64, s; linkdims=10)
         vv = sb_outer(v)
         @test tr(vv) ≈ 1
         @test expect(v, "n") ≈ expect(vv, "n")
+        @test expect(v, "x"; sites=2:4) ≈ expect(vv, "x"; sites=2:4)
+    end
+
+    @testset "Correlation matrices" begin
+        v = random_mps(ComplexF64, s; linkdims=5)
+        vv = sb_outer(v)
+        @test correlation_matrix(v, "x", "n") ≈ correlation_matrix(vv, "x", "n")
+        @test correlation_matrix(v, "p", "x"; sites=2:4) ≈
+            correlation_matrix(vv, "p", "x"; sites=2:4)
     end
 
     @testset "Sampling" begin

@@ -2,7 +2,6 @@ using Test
 using GaussianStates, ITensors, ITensorMPS, LinearAlgebra
 using GaussianBosonSamplingMPS
 using GaussianBosonSamplingMPS: hafnian, loophafnian, dirsum
-using MPSTimeEvolution: LocalOperator
 
 # Check that the hafnian and loop-hafnian functions in the package have the expected scaling
 # properties.

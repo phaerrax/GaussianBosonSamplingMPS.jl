@@ -24,25 +24,24 @@
             all(attenuator_0[k, :] == zeros(maxnumber^2) for k in 2:size(attenuator_0, 2))
 
         sites = sb_siteinds(; nmodes=nmodes, maxnumber=maxnumber)
-        N = LocalOperator(sb_index(1) => "n")
 
         # If the initial state is an eigenvector of the number operator we can derive
         # an explicit analytic formula for the attenuated expectation value of the number
         # operator.
         n_init = 2
-        v = MPS(sites, string(n_init))
-        n_pre = real(measure(v, N))
+        v = SuperBosonMPS(sites, string(n_init))
+        n_pre = real(expect(v, "n"; sites=1))
         @test n_pre == n_init
 
         # Check that the operator with attenuation=1 also doesn't change the MPS.
         # We can't test the strict equality `==` since the IDs of the indices may change,
         # even if the underlying data stays the same.
         @test attenuate(v, 1, 1) ≈ v
-        @test attenuate(v, 0, 1) ≈ MPS(siteinds(v), "0")
+        @test attenuate(v, 0, 1) ≈ SuperBosonMPS(sites, "0")
 
         attenuationrate = 0.1
         v_post = attenuate(v, attenuationrate, 1)
-        n_post = real(measure(v_post, N))
+        n_post = expect(v_post, "n"; sites=1)
         @test n_post ≈ sum(
             n *
             binomial(n_init, n) *
@@ -54,17 +53,11 @@
     @testset "Squeeze operators" begin
         nmodes = 3
         maxnumber = 10
-        maxdim = 10
 
         sites = sb_siteinds(; nmodes=nmodes, maxnumber=maxnumber)
-        N = [
-            LocalOperator(sb_index(1) => "n")
-            LocalOperator(sb_index(2) => "n")
-            LocalOperator(sb_index(3) => "n")
-        ]
 
-        v = MPS(sites, "0")
-        n_pre = measure(v, N)
+        v = SuperBosonMPS(sites, "0")
+        n_pre = expect(v, "n")
         @test iszero(sum(n_pre))
 
         # As always, we need to keep abs(z) low if we don't want to run into trouble with
@@ -74,7 +67,7 @@
         @test w ≈ v
 
         w = squeeze(v, z)
-        n_post = measure(w, N)
+        n_post = expect(w, "n")
         @test sum(n_post) ≈ sum(@. sinh(abs(z))^2)
     end
 
@@ -83,21 +76,16 @@
         maxnumber = 10
 
         sites = sb_siteinds(; nmodes=nmodes, maxnumber=maxnumber)
-        N = [
-            LocalOperator(sb_index(1) => "n")
-            LocalOperator(sb_index(2) => "n")
-            LocalOperator(sb_index(3) => "n")
-        ]
 
-        v = MPS(sites, ["1", "1", "0", "0", "0", "0"])
-        n_pre = measure(v, N)
+        v = SuperBosonMPS(sites, ["1", "0", "0"])
+        n_pre = expect(v, "n")
         @test sum(n_pre) == 1
 
         w = beamsplitter(v, cospi(1/4), 1, 3)
-        n_post = measure(w, N)
+        n_post = expect(w, "n")
         @test sum(n_post) ≈ sum(n_pre)
 
-        ρ_vacuum = MPS(sites, "0")
+        ρ_vacuum = SuperBosonMPS(sites, "0")
         w_expected =
             1/2 * add(
                 apply(
@@ -127,15 +115,14 @@
 
         # With superboson states
         sites = sb_siteinds(; nmodes=nmodes, maxnumber=maxnumber)
-        N = [LocalOperator(sb_index(j) => "n") for j in 1:nmodes]
 
-        v = MPS(sites, "0")
-        n_pre = measure(v, N)
+        v = SuperBosonMPS(sites, "0")
+        n_pre = expect(v, "n")
         @test sum(n_pre) == 0
 
         α = rand(ComplexF64, nmodes) ./ 10
         w = displace(v, α)
-        n_post = measure(w, N)
+        n_post = expect(w, "n")
         @test sum(n_post) ≈ norm(α)^2
 
         # With standard pure states
@@ -145,7 +132,7 @@
         @test sum(n_pre) == 0
 
         α = rand(ComplexF64, nmodes) ./ 10
-        w = displace_pure(v, α)
+        w = displace(v, α)
         n_post = expect(w, "n")
         @test sum(n_post) ≈ norm(α)^2
     end
