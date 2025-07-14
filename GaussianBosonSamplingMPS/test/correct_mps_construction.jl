@@ -158,8 +158,7 @@ squeezed2_state_coeff(x, n) = squeezed2_state_coeff(abs(x), angle(x), n)
         replace!(x -> abs2(x) < cutoff ? zero(x) : x, coefficients_mps)
         @test abs.(coefficients_mps) ≈ abs.(coefficients_expected) ≈ abs.(coefficients_fc)
 
-        normalize!(v)
-        @test isapprox(sum(expect(v, "N")), number(g))
+        @test sum(expect(v, "n")) ≈ number(g) atol=sqrt(cutoff)
     end
 
     @testset "Several Gaussian operations on two modes" begin
@@ -168,7 +167,7 @@ squeezed2_state_coeff(x, n) = squeezed2_state_coeff(abs(x), angle(x), n)
         maxn = 12
         maxdim = 10_000
 
-        cutoff = 1e-12
+        cutoff = 1e-14
         r = atanh(cutoff^(1/maxn)) * rand()
         θ = 2pi * rand()
         g = vacuumstate(2)
@@ -206,10 +205,9 @@ squeezed2_state_coeff(x, n) = squeezed2_state_coeff(abs(x), angle(x), n)
             end
         end
         replace!(x -> abs2(x) < cutoff ? zero(x) : x, coefficients_mps)
-        @test_skip abs.(coefficients_mps) ≈ abs.(coefficients_fc)
+        @test abs.(coefficients_mps) ≈ abs.(coefficients_fc) atol=sqrt(cutoff)
 
-        normalize!(v)
-        @test isapprox(sum(expect(v, "N")), number(g))
+        @test sum(expect(v, "N")) ≈ number(g) atol=sqrt(cutoff)
     end
 
     @testset "Two-mode squeezing + beam splitter on three modes" begin
