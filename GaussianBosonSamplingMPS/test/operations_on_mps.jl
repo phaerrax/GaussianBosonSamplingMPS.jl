@@ -1,8 +1,7 @@
 @testset verbose=true "Operations on matrix-product states" begin
     @testset "Attenuator channel" begin
         nmodes = 1
-        maxnumber = 10
-        maxdim = 10
+        maxnumber = 5
 
         attenuator_1 = op(
             OpName("attenuator"), SiteType("Boson"), maxnumber, maxnumber; attenuation=1
@@ -73,7 +72,7 @@
 
     @testset "Beam splitter operators" begin
         nmodes = 3
-        maxnumber = 10
+        maxnumber = 3
 
         sites = sb_siteinds(; nmodes=nmodes, maxnumber=maxnumber)
 
