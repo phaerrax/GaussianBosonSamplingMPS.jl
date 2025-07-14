@@ -1,5 +1,5 @@
 using Random
-using ITensors: OneITensor
+using ITensors: OneITensor, adapt, datatype
 using ITensors.SiteTypes: SiteTypes, siteind, siteinds, state
 using MPSTimeEvolution: LocalOperator, domain
 
@@ -21,6 +21,14 @@ mutable struct SuperBosonMPS <: AbstractMPS
     llim::Int
     rlim::Int
 end
+
+"""
+    nmodes(v::SuperBosonMPS)
+
+Return the number of "true" bosonic modes contained in the SuperBosonMPS `v`, i.e. half its
+actual length.
+"""
+nmodes(v::SuperBosonMPS) = div(length(v), 2)
 
 sb_index(n) = 2n - 1  # mode number --> MPS site
 inv_sb_index(n) = div(n + 1, 2)  # MPS site --> mode number
@@ -358,6 +366,43 @@ function ITensorMPS.expect(psi::SuperBosonMPS, ops; sites=1:div(length(psi), 2))
     return ex
 end
 
+function _sb_contract_with_observable(psi::SuperBosonMPS, ids, precontracted_psi_ids, O, j)
+    N = nmodes(psi)
+    @assert length(ids) == N
+    @assert length(precontracted_psi_ids) == N
+    @assert 1 ≤ j ≤ N
+    x = OneITensor()
+    for n in 1:N
+        if n == j
+            x *= dag(apply(adj(O), ids[j])) * psi[sb_index(j)] * psi[sb_index(j) + 1]
+        else
+            x *= precontracted_psi_ids[n]
+        end
+    end
+    return scalar(x)
+end
+
+function _sb_contract_with_2observables(
+    psi::SuperBosonMPS, ids, precontracted_psi_ids, O1, j1, O2, j2
+)
+    N = nmodes(psi)
+    @assert length(ids) == N
+    @assert length(precontracted_psi_ids) == N
+    @assert 1 ≤ j1 ≤ N
+    @assert 1 ≤ j2 ≤ N
+    x = OneITensor()
+    for n in 1:N
+        if n == j1
+            x *= dag(apply(adj(O1), ids[j1])) * psi[sb_index(j1)] * psi[sb_index(j1) + 1]
+        elseif n == j2
+            x *= dag(apply(adj(O2), ids[j2])) * psi[sb_index(j2)] * psi[sb_index(j2) + 1]
+        else
+            x *= precontracted_psi_ids[n]
+        end
+    end
+    return scalar(x)
+end
+
 function ITensorMPS.expect(psi::SuperBosonMPS, op::AbstractString; kwargs...)
     return first(expect(psi, (op,); kwargs...))
 end
@@ -670,4 +715,132 @@ function sample(rng::AbstractRNG, m::SuperBosonMPS)
         end
     end
     return result
+end
+
+"""
+    correlation_matrix(
+        v::SuperBosonMPS, A::AbstractString, B::AbstractString; kwargs...
+    )
+
+    correlation_matrix(
+        v::SuperBosonMPS, A::Matrix{<:Number}, B::Matrix{<:Number}; kwargs...
+    )
+
+Given a SuperBosonMPS `v` representing a state ``ρ`` and two strings or matrices `A` and `B`
+denoting operators (as recognized by the `op` function), computes the two-point correlation
+function matrix ``C_{ij} = tr(A_i B_j ρ)`` using efficient MPS techniques. Returns the
+matrix `C`.
+
+# Optional keyword arguments
+
+  - `sites = 1:nmodes(v)`: compute correlations only for sites in the given range
+  - `ishermitian = false` : if `false`, force independent calculations of the matrix
+  elements above and below the diagonal, while if `true` assume they are complex conjugates.
+
+# Examples
+
+```julia
+julia> s = siteinds("Boson", 3; dim=4);
+
+julia> vac = sb_outer(MPS(ComplexF64, s, "0"));
+
+julia> correlation_matrix(vac, "x", "x")
+3×3 Matrix{ComplexF64}:
+ 0.5+0.0im  0.0+0.0im  0.0+0.0im
+ 0.0-0.0im  0.5+0.0im  0.0+0.0im
+ 0.0-0.0im  0.0-0.0im  0.5+0.0im
+
+julia> correlation_matrix(vac, "p", "x")
+3×3 Matrix{ComplexF64}:
+ 0.0-0.5im  0.0+0.0im  0.0+0.0im
+ 0.0+0.0im  0.0-0.5im  0.0+0.0im
+ 0.0+0.0im  0.0+0.0im  0.0-0.5im
+```
+"""
+function ITensorMPS.correlation_matrix(v::SuperBosonMPS, Op1, Op2; sites=1:nmodes(v), ishermitian=nothing)
+    if !(sites isa AbstractRange)
+        sites = collect(sites)
+    end
+
+    start_site = first(sites)
+    end_site = last(sites)
+
+    N = nmodes(v)
+    ElT = ITensorMPS.scalartype(v)
+    s = siteinds(v)
+
+    sb_id_blocks = _id_pairs(v)
+    ids = _id_contractions(v)
+    tr_v = scalar(prod(ids))
+    iszero(tr_v) && error("SuperBosonMPS has zero trace in function `expect`")
+
+    onsiteOp = ITensorMPS._op_prod(Op1, Op2)
+    # ITensorMPS._op_prod("a", "b") --> "a * b" with strings, otherwise it's a matrix
+    # product
+
+    # Decide if we need to calculate a non-hermitian corr. matrix, which is roughly double
+    # the work.
+    is_cm_hermitian = ishermitian
+    if isnothing(is_cm_hermitian)
+        # Assume correlation matrix is non-hermitian
+        is_cm_hermitian = false
+        O1 = op(Op1, s, sb_index(start_site))
+        O2 = op(Op2, s, sb_index(start_site))
+        O1 /= norm(O1)
+        O2 /= norm(O2)
+        #We need to decide if O1 ∝ O2 or O1 ∝ O2^dagger allowing for some round off errors.
+        eps = 1e-10
+        is_op_proportional = norm(O1 - O2) < eps
+        is_op_hermitian = norm(O1 - adj(O2)) < eps
+        if is_op_proportional || is_op_hermitian
+            is_cm_hermitian = true
+        end
+    end
+
+    # Nb = size of block of correlation matrix
+    Nb = length(sites)
+
+    # Pre-allocate the correlation matrix
+    C = zeros(ElT, Nb, Nb)
+
+    for (ni, i) in enumerate(sites[1:(end - 1)])
+        # Get j == i diagonal correlations
+        oᵢ = adapt(datatype(v[sb_index(i)]), op(onsiteOp, s, sb_index(i)))  # remember: onsiteOp = Op1 * Op2
+        C[ni, ni] = _sb_contract_with_observable(v, sb_id_blocks, ids, oᵢ, i) / tr_v
+
+        oᵢ = adapt(datatype(v[sb_index(i)]), op(Op1, s, sb_index(i)))
+        for (n, j) in enumerate(sites[(ni + 1):end])
+            nj = ni + n
+            # Get j > i diagonal correlations
+            oⱼ = adapt(datatype(v[sb_index(j)]), op(Op2, s, sb_index(j)))
+            C[ni, nj] =
+                _sb_contract_with_2observables(v, sb_id_blocks, ids, oᵢ, i, oⱼ, j) /
+                tr_v
+            if is_cm_hermitian
+                C[nj, ni] = conj(C[ni, nj])
+            end
+        end
+
+        if !is_cm_hermitian
+            # If ishermitian=false the we must calculate the below diag elements explicitly.
+
+            # Get j < i correlations by swapping the operators
+            oᵢ = adapt(datatype(v[sb_index(i)]), op(Op2, s, sb_index(i)))
+
+            for (n, j) in enumerate(sites[(ni + 1):end])
+            nj = ni + n
+                oⱼ = adapt(datatype(v[sb_index(j)]), op(Op1, s, sb_index(j)))
+                C[nj, ni] =
+                    _sb_contract_with_2observables(v, sb_id_blocks, ids, oᵢ, i, oⱼ, j) /
+                    tr_v
+            end
+        end
+    end
+
+    # Get last diagonal element of C
+    i = end_site
+    oᵢ = adapt(datatype(v[sb_index(i)]), op(onsiteOp, s, sb_index(i)))
+    C[Nb, Nb] = _sb_contract_with_observable(v, sb_id_blocks, ids, oᵢ, i) / tr_v
+
+    return C
 end
