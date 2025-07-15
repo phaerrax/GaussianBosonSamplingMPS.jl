@@ -9,10 +9,10 @@ push!(LOAD_PATH, "../src/")
 bib = CitationBibliography(joinpath(@__DIR__, "src", "refs.bib"); style=:numeric)
 
 makedocs(;
-    sitename="GaussianBosonSamplingMPS",
     modules=[GaussianBosonSamplingMPS],
-    remotes=nothing,
+    sitename="GaussianBosonSamplingMPS",
     checkdocs=:exported,
+    authors="Davide Ferracin",
     pages=["Home" => "index.md", "Reference" => "reference.md"],
     plugins=[bib],
     format=Documenter.HTML(;
@@ -30,9 +30,5 @@ makedocs(;
     ),
 )
 
-# Documenter can also automatically deploy documentation to gh-pages.
-# See "Hosting Documentation" and deploydocs() in the Documenter manual
-# for more information.
-#=deploydocs(
-    repo = "<repository url>"
-)=#
+# Automatically deploy documentation to gh-pages.
+deploydocs(; repo="github.com/phaerrax/gaussian_boson_sampling.git")
