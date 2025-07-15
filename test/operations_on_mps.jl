@@ -1,3 +1,5 @@
+using GaussianBosonSamplingMPS: sb_index
+
 @testset verbose=true "Operations on matrix-product states" begin
     @testset "Attenuator channel" begin
         nmodes = 1
