@@ -14,7 +14,11 @@ makedocs(;
     repo=Remotes.GitHub("phaerrax", "GaussianBosonSamplingMPS.jl"),
     checkdocs=:exported,
     authors="Davide Ferracin",
-    pages=["Home" => "index.md", "Reference" => "reference.md"],
+    pages=[
+        "Home" => "index.md",
+        "Reference" => "reference.md",
+        "Examples" => ["examples/borealis.md"],
+    ],
     plugins=[bib],
     format=Documenter.HTML(;
         mathengine=Documenter.MathJax(
@@ -23,7 +27,17 @@ makedocs(;
                     :Macros => Dict(
                         :ket => [raw"\lvert #1 \rangle", 1],
                         :bra => [raw"\langle #1 \rvert", 1],
+                        :transpose => [raw"#1^{\mathrm{T}}", 1],
                         :adj => [raw"#1^\dagger", 1],
+                        :real => [raw"\operatorname{Re}"],
+                        :imag => [raw"\operatorname{Im}"],
+                        :N => [raw"\mathbb{N}"],
+                        :C => [raw"\mathbb{C}"],
+                        :R => [raw"\mathbb{R}"],
+                        :dd => [raw"\mathrm{d}"],
+                        :det => [raw"\operatorname{det}"],
+                        :opt => [raw"_{\mathrm{opt}}"],
+                        :tr => [raw"\operatorname{tr}"],
                     ),
                 ),
             ),

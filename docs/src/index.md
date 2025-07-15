@@ -18,7 +18,7 @@ ported from _The Walrus_ [Gupt2019](@cite).
   channel.
 - Manipulate MPS (and sample from them) representing mixed states in the
   superboson formalism [Schmutz1978](@cite).
-- Find an approximate MPS representation of a Gaussian state in the Fock basis
+- Find an approximate MPS representation of a Gaussian state in the Fock basis.
 - Sample from the outcome of a lossy Gaussian boson sampling experiment with
   the classical MPS-based algorithm described in [Oh2024](@cite).
 
