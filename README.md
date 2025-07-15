@@ -1,9 +1,12 @@
-# Gaussian boson sampling with matrix-product states
+# GaussianBosonSamplingMPS
+
+[![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
 
 Julia implementation of the tensor-network-based algorithm for simulating
 Gaussian boson sampling experiments proposed in [[1]](#1), and of the algorithm
 in [[2]](#2) for computing elements of Gaussian operations in the Fock number
-basis.
+basis, plus a set of utilities for a full MPS simulation of quantum optical
+operations.
 
 The functions for computing hafnians and loop hafnians of square matrices are
 ported from _The Walrus_ [[3]](#3).
