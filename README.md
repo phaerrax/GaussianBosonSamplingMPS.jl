@@ -1,6 +1,7 @@
 # GaussianBosonSamplingMPS
 
-[![Code Style: Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
+[![Code Style:
+Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
 
 Julia implementation of the tensor-network-based algorithm for simulating
 Gaussian boson sampling experiments proposed in [[1]](#1), and of the algorithm
@@ -10,6 +11,36 @@ operations.
 
 The functions for computing hafnians and loop hafnians of square matrices are
 ported from _The Walrus_ [[3]](#3).
+
+## Installation
+
+### From a registry
+
+This package is registered in my
+[TensorNetworkSimulations](https://github.com/phaerrax/TensorNetworkSimulations)
+registry. By first adding this registry, with
+
+```julia
+using Pkg
+pkg"registry add https://github.com/phaerrax/TensorNetworkSimulations.git"
+```
+
+(this must be done just once per Julia installation) the package can then be
+installed as a normal one:
+
+```julia
+using Pkg
+pkg"add GaussianBosonSamplingMPS"
+```
+
+### From GitHub
+
+Alternatively, straight installation from GitHub is also possible:
+
+```julia
+using Pkg
+pkg "add https://github.com/phaerrax/GaussianBosonSamplingMPS.jl"
+```
 
 ## References
 
