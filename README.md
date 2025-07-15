@@ -2,6 +2,7 @@
 
 [![Code Style:
 Blue](https://img.shields.io/badge/code%20style-blue-4495d1.svg)](https://github.com/invenia/BlueStyle)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://phaerrax.github.io/GaussianBosonSamplingMPS.jl/dev/)
 
 Julia implementation of the tensor-network-based algorithm for simulating
 Gaussian boson sampling experiments proposed in [[1]](#1), and of the algorithm
