@@ -28,6 +28,8 @@ jobs:
         shell: julia --color=yes --project=docs {0}
         run: |
           using Pkg
+          Pkg.Registry.add(url = "https://github.com/phaerrax/TensorNetworkSimulations.git")
+          Pkg.Registry.add("General")
           Pkg.develop(PackageSpec(path=pwd()))
           Pkg.instantiate()
       - name: Build and deploy
