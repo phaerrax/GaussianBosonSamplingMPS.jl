@@ -46,13 +46,44 @@ MathJax.Hub.Config({
         "\\lvert #1 \\rangle",
         1
       ],
-      "adj": [
-        "#1^\\dagger",
-        1
+      "tr": [
+        "\\operatorname{tr}"
+      ],
+      "dd": [
+        "\\mathrm{d}"
       ],
       "bra": [
         "\\langle #1 \\rvert",
         1
+      ],
+      "real": [
+        "\\operatorname{Re}"
+      ],
+      "opt": [
+        "_{\\mathrm{opt}}"
+      ],
+      "N": [
+        "\\mathbb{N}"
+      ],
+      "R": [
+        "\\mathbb{R}"
+      ],
+      "det": [
+        "\\operatorname{det}"
+      ],
+      "adj": [
+        "#1^\\dagger",
+        1
+      ],
+      "transpose": [
+        "#1^{\\mathrm{T}}",
+        1
+      ],
+      "imag": [
+        "\\operatorname{Im}"
+      ],
+      "C": [
+        "\\mathbb{C}"
       ]
     }
   },
