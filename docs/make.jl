@@ -11,6 +11,7 @@ bib = CitationBibliography(joinpath(@__DIR__, "src", "refs.bib"); style=:numeric
 makedocs(;
     modules=[GaussianBosonSamplingMPS],
     sitename="GaussianBosonSamplingMPS",
+    repo=Remotes.GitHub("phaerrax", "GaussianBosonSamplingMPS.jl"),
     checkdocs=:exported,
     authors="Davide Ferracin",
     pages=["Home" => "index.md", "Reference" => "reference.md"],
@@ -31,4 +32,4 @@ makedocs(;
 )
 
 # Automatically deploy documentation to gh-pages.
-deploydocs(; repo="github.com/phaerrax/gaussian_boson_sampling.git")
+deploydocs(; repo="github.com/phaerrax/GaussianBosonSamplingMPS.jl.git")
