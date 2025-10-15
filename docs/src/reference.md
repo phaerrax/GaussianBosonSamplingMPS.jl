@@ -67,6 +67,9 @@ squeeze
 beamsplitter
 ```
 
+The matrix elements of the squeezing operator are taken from
+[Marian1992:squeezing_fock_coefficients](@cite).
+
 ## Boson sampling output simulation
 
 Here lies the heart of this package: the following methods implement the

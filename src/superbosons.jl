@@ -125,8 +125,8 @@ end
 Construct a product state `SuperBosonMPS` of element type `T`, having site indices `sites`,
 and which corresponds to the initial state given by the array `states`. The input `states`
 may be an array of strings or an array of ints recognized by the `state` function defined
-for the relevant `Index` tag type. In addition, a single string or int can be input to
-create a uniform state.
+for the `Boson` tag type. In addition, a single string or int can be input to create a
+uniform state.
 
 # Examples
 
@@ -142,7 +142,7 @@ function SuperBosonMPS(eltype::Type{<:Number}, sites::Vector{<:Index}, states_)
     if length(sites) != 2length(states_)
         throw(
             DimensionMismatch(
-                "SuperBosonMPS: Number of sites and and initial vals don't match"
+                "SuperBosonMPS: number of sites and and initial vals don't match"
             ),
         )
     end

@@ -6,6 +6,7 @@ version = "0.3.0"
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 GaussianStates = "87be6f6c-69b0-4e4f-9c30-808c15aab153"
+HypergeometricFunctions = "34004b35-14d8-5ef3-9330-4cdb6864b03a"
 ITensorMPS = "0d1a4710-d33b-49a5-8f18-73bdf49b47e2"
 ITensors = "9136182c-28ba-11e9-034c-db9fb085ebd5"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
@@ -16,3 +17,4 @@ SCS = "c946c3f1-0d1f-5ce8-9dea-7daa1f7e2d13"
 
 [compat]
 GaussianStates = ">=0.1.2"
+HypergeometricFunctions = "0.3.28"

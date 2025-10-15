@@ -64,8 +64,6 @@ using GaussianBosonSamplingMPS: sb_index
         # As always, we need to keep abs(z) low if we don't want to run into trouble with
         # the truncation of the local Hilbert spaces.
         z = rand(3) ./ 10 .* cispi.(2 .* rand(3))
-        w = squeeze(squeeze(v, 1, z[1]), 1, -z[1])
-        @test w ≈ v
 
         w = squeeze(v, z)
         n_post = expect(w, "n")

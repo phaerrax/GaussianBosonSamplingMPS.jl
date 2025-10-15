@@ -1,6 +1,6 @@
 module GaussianBosonSamplingMPS
 
-using LinearAlgebra, GaussianStates, ITensors, ITensorMPS
+using LinearAlgebra, GaussianStates, ITensors, ITensorMPS, HypergeometricFunctions
 
 # Sampling
 using Distributions: MvNormal
