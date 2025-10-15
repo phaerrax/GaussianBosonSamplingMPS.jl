@@ -23,6 +23,7 @@ include("superbosons.jl")
 export attenuate, firstmoments, covariancematrix
 include("mps_operations/moments.jl")
 include("mps_operations/squeeze.jl")
+include("mps_operations/squeeze2.jl")
 include("mps_operations/beamsplitter.jl")
 include("mps_operations/attenuate.jl")
 include("mps_operations/displace.jl")
