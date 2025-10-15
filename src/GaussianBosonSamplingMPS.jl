@@ -21,7 +21,11 @@ export SuperBosonMPS, measure, sb_siteinds, sb_outer, sample
 include("superbosons.jl")
 
 export attenuate, firstmoments, covariancematrix
-include("mps_operations.jl")
+include("mps_operations/moments.jl")
+include("mps_operations/squeeze.jl")
+include("mps_operations/beamsplitter.jl")
+include("mps_operations/attenuate.jl")
+include("mps_operations/displace.jl")
 
 export optimise
 include("state_optimisation.jl")
