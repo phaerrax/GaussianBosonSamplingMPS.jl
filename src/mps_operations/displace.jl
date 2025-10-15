@@ -23,11 +23,41 @@ function ITensors.op(::OpName"displace", ::SiteType"Boson", s::Index; α)
     return S
 end
 
-"""
-    displace(v::Union{MPS, SuperBosonMPS}, α; kwargs...)
+@doc raw"""
+    displace(v::Union{MPS,SuperBosonMPS}, α, n; kwargs...)
 
-Apply a product of single-mode displacement operators on the pure or mixed state `v` , with
-parameter `α[j]` on mode `j`.
+Apply the displacement operator
+
+```math
+D(α) = \exp(α \adj{a} - \conj{α} a)
+```
+
+with ``α ∈ ℂ``, to the `n`-th mode of the state represented by `v`.
+"""
+function GaussianStates.displace(v::SuperBosonMPS, α, n; kwargs...)
+    phy, anc = siteind(v, sb_index(n)), siteind(v, sb_index(n)+1)
+
+    sq_phy = op("displace", phy; α=α)
+    sq_anc = op("displace", anc; α=α)
+    return apply([sq_phy, conj(sq_anc)], v; kwargs...)
+end
+
+function GaussianStates.displace(m::MPS, α, n; kwargs...)
+    return apply(op("displace", siteind(m, n); α=α), m; kwargs...)
+end
+
+@doc raw"""
+    displace(v::Union{MPS,SuperBosonMPS}, α; kwargs...)
+
+Apply the displacement operator
+
+```math
+⨂_{i=1}^{n} D(α_i),
+\quad
+D(α) = \exp(α \adj{a} - \conj{α} a)
+```
+
+with ``α_i ∈ ℂ``, to all modes of the state represented by `v`.
 """
 function GaussianStates.displace(m::MPS, α; kwargs...)
     @assert length(m) == length(α)
@@ -36,12 +66,10 @@ function GaussianStates.displace(m::MPS, α; kwargs...)
 end
 
 function GaussianStates.displace(v::SuperBosonMPS, α; kwargs...)
-    @assert iseven(length(v))
-    nmodes = div(length(v), 2)
-    @assert nmodes == length(α)
+    @assert nmodes(v) == length(α)
 
     displacement_ops = ITensor[]
-    for j in 1:nmodes
+    for j in 1:nmodes(v)
         append!(
             displacement_ops,
             [

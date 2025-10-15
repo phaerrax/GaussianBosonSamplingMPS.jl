@@ -1,6 +1,6 @@
 # Attenuator channel
 
-function _attenuatormatrixcoefficient(attenuation, k, n, m)
+function _attenuator_coefficient(attenuation, k, n, m)
     # The matrix element ⟨fₙ, Bₖ fₘ⟩ where fₙ is the number eigenbasis element with
     # number `n`.
     return sqrt(binomial(n + k, k)) *
@@ -13,7 +13,7 @@ function ITensors.op(::OpName"attenuator", ::SiteType"Boson", d1::Int, d2::Int; 
     @assert d1 == d2
     maxn = d1-1
     A = [
-        _attenuatormatrixcoefficient(attenuation, k, n, m) for
+        _attenuator_coefficient(attenuation, k, n, m) for
         k in 0:maxn, n in 0:maxn, m in 0:maxn
     ]
 
@@ -23,8 +23,8 @@ end
 @doc raw"""
     attenuate(v::SuperBosonMPS, attenuation, n)
 
-Apply on mode `n` the attenuator channel ``ρ ↦ \sum_{k=0}^{+∞} B_k ρ \adj{B_k}`` on the MPS
-`v` representing the state ``ρ`` in the superboson formalism, where
+Apply the attenuator channel ``ρ ↦ \sum_{k=0}^{+∞} B_k ρ \adj{B_k}`` to the `n`-th mode of
+the state ``ρ`` represented by the `SuperBosonMPS` `v`, where
 
 ```math
 B_k = \sum_{m=0}^{+∞} \binom{m+k}{k}^{\frac12} (1-η^2)^{\frac{k}{2}} η^m |m⟩⟨m+k|

@@ -59,16 +59,16 @@ covariancematrix
 
 The following methods can be applied to an MPS in order to simulate quantum
 optical operations.
+The matrix elements of the squeezing operator are taken from
+[Marian1992:squeezing_fock_coefficients](@cite).
 
 ```@docs
 attenuate
 displace
 squeeze
+squeeze2
 beamsplitter
 ```
-
-The matrix elements of the squeezing operator are taken from
-[Marian1992:squeezing_fock_coefficients](@cite).
 
 ## Boson sampling output simulation
 

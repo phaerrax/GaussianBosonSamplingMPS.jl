@@ -15,9 +15,7 @@ function _squeeze2_coefficient(z, n′, m′, n, m, k, l)
     end
 end
 
-function ITensors.op(
-    ::OpName"squeezer2", st::SiteType"Boson", s1::Index, s2::Index; squeeze
-)
+function ITensors.op(::OpName"squeezer2", ::SiteType"Boson", s1::Index, s2::Index; squeeze)
     T = ITensor(ComplexF64, s1', s2', s1, s2)
     for n in eachval(s1), m in eachval(s2), n′ in eachval(s1'), m′ in eachval(s2')
         T[s1 => n, s2 => m, s1' => n′, s2' => m′] = sum(
@@ -28,21 +26,27 @@ function ITensors.op(
     return T
 end
 
-"""
-    squeeze2(v::SuperBosonMPS, z, n1, n2; kwargs...)
+@doc raw"""
+    squeeze2(v::Union{MPS,SuperBosonMPS}, z, n1, n2; kwargs...)
 
-Apply the two-mode squeezing operator ``exp(z a* ⊗ a* - z̄ a ⊗ a)`` on modes `n1` and `n2`
-with squeeze parameter `z` to the state represented by `v`.
+Apply the two-mode squeezing operator
+
+```math
+S₂(z) = \exp(z \adj{a} ⊗ \adj{a} - \conj{z} a ⊗ a)
+```
+
+with ``z ∈ ℂ``, on modes `n1` and `n2` of the state represented by `v`.
 """
 function GaussianStates.squeeze2(v::SuperBosonMPS, z, n1, n2; kwargs...)
     phy1, anc1 = siteind(v, sb_index(n1)), siteind(v, sb_index(n1)+1)
     phy2, anc2 = siteind(v, sb_index(n2)), siteind(v, sb_index(n2)+1)
 
-    bs_phy = op("squeeze2", phy1, phy2; squeeze=z)
-    bs_anc = op("squeeze2", anc1, anc2; squeeze=z)
+    sq_phy = op("squeezer2", phy1, phy2; squeeze=z)
+    sq_anc = op("squeezer2", anc1, anc2; squeeze=z)
 
-    v = apply(bs_phy, v; kwargs...)
-    # `apply` already moves the sites so that they are adjacent before actually applying
-    # the two-site operator, then it moves them back to their original position.
-    return apply(conj(bs_anc), v; kwargs...)
+    return apply([sq_phy, conj(sq_anc)], v; kwargs...)
+end
+
+function GaussianStates.squeeze2(m::MPS, z, n1, n2; kwargs...)
+    return apply(op("squeezer2", siteind(m, n1), siteind(m, n2); squeeze=z), m; kwargs...)
 end

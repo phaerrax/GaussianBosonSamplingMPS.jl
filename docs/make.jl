@@ -28,6 +28,7 @@ makedocs(;
                         :ket => [raw"\lvert #1 \rangle", 1],
                         :bra => [raw"\langle #1 \rvert", 1],
                         :transpose => [raw"#1^{\mathrm{T}}", 1],
+                        :conj => [raw"\bar{#1}", 1],
                         :adj => [raw"#1^\dagger", 1],
                         :real => [raw"\operatorname{Re}"],
                         :imag => [raw"\operatorname{Im}"],

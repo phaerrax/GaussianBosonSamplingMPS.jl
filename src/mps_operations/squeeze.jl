@@ -22,7 +22,7 @@ function _squeeze_coefficient(z, n, m)
     end
 end
 
-function ITensors.op(::OpName"squeezer", st::SiteType"Boson", d::Int; squeeze)
+function ITensors.op(::OpName"squeezer", ::SiteType"Boson", d::Int; squeeze)
     S = zeros(ComplexF64, d, d)
     for n′ in 0:(d - 1), n in 0:(d - 1)
         S[n′ + 1, n + 1] = _squeeze_coefficient(squeeze, n′, n)
@@ -30,34 +30,61 @@ function ITensors.op(::OpName"squeezer", st::SiteType"Boson", d::Int; squeeze)
     return S
 end
 
-"""
-    squeeze(v::SuperBosonMPS, n, z; kwargs...)
+@doc raw"""
+    squeeze(v::Union{MPS,SuperBosonMPS}, z, n; kwargs...)
 
-Apply the squeezing operator with parameter `z` on mode `n` to the state represented by `v`.
+Apply the squeezing operator
+
+```math
+S(z) = \exp\bigl(\tfrac12 z (\adj{a})^2 - \tfrac12 \conj{z} a^2\bigr)
+```
+
+with ``z ∈ ℂ``, to the `n`-th mode of the state represented by `v`.
 """
-function GaussianStates.squeeze(v::SuperBosonMPS, n, z; kwargs...)
+function GaussianStates.squeeze(v::SuperBosonMPS, z, n; kwargs...)
     phy, anc = siteind(v, sb_index(n)), siteind(v, sb_index(n)+1)
 
     sq_phy = op("squeezer", phy; squeeze=z)
     sq_anc = op("squeezer", anc; squeeze=z)
-    v = apply(sq_phy, v; kwargs...)
-    return apply(conj(sq_anc), v; kwargs...)
+    return apply([sq_phy, conj(sq_anc)], v; kwargs...)
 end
 
-"""
-    squeeze(v::SuperBosonMPS, z; kwargs...)
+function GaussianStates.squeeze(m::MPS, z, n; kwargs...)
+    return apply(op("squeezer", siteind(m, n); squeeze=z), m; kwargs...)
+end
 
-Apply the squeezing operator with parameter `z_i` on each mode `i` to the state represented
-by `v`.
+@doc raw"""
+    squeeze(v::Union{MPS,SuperBosonMPS}, z; kwargs...)
+
+Apply the squeezing operator
+
+```math
+⨂_{i=1}^{n} S(z_i),
+\quad
+S(z) = \exp\bigl(\tfrac12 z (\adj{a})^2 - \tfrac12 \conj{z} a^2\bigr),
+```
+
+with ``z_i ∈ ℂ``, to all modes of the state represented by `v`.
 """
 function GaussianStates.squeeze(v::SuperBosonMPS, z; kwargs...)
-    @assert length(v) == 2length(z)
-    for j in eachindex(z)
-        sq_phy = op("squeezer", siteind(v, sb_index(j)); squeeze=z[j])
-        sq_anc = op("squeezer", siteind(v, sb_index(j)+1); squeeze=z[j])
-        v = apply(sq_phy, v; kwargs...)
-        v = apply(conj(sq_anc), v; kwargs...)
+    @assert nmodes(v) == length(z)
+
+    squeezing_ops = ITensor[]
+    for j in 1:nmodes(v)
+        append!(
+            squeezing_ops,
+            [
+                op("squeezer", siteind(v, sb_index(j)); squeeze=z[j]),
+                conj(op("squeezer", siteind(v, sb_index(j)+1); squeeze=z[j])),
+            ],
+        )
     end
 
-    return v
+    return apply(squeezing_ops, v; kwargs...)
+end
+
+function GaussianStates.squeeze(m::MPS, z; kwargs...)
+    @assert length(m) == length(z)
+    squeezing_ops = [op("squeezer", siteind(m, j); squeeze=z[j]) for j in eachindex(m)]
+    return apply(squeezing_ops, m; kwargs...)
 end

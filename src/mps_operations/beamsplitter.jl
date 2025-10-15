@@ -29,11 +29,16 @@ function ITensors.op(::OpName"beamsplitter", ::SiteType"Boson", s1::Index, s2::I
     return B
 end
 
-"""
-    beamsplitter(v::SuperBosonMPS, z, n1, n2; kwargs...)
+@doc raw"""
+    beamsplitter(v::Union{MPS,SuperBosonMPS}, z, n1, n2; kwargs...)
 
-Apply the beam-splitter operator ``exp(z a* ⊗ a - z̄ a ⊗ a*)`` on modes `n1` and `n2` with
-complex parameter `z` to the state represented by `v`.
+Apply the beam-splitter operator
+
+```math
+B(z) = \exp(z \adj{a} ⊗ a - \conj{z} a ⊗ \adj{a})
+```
+
+with ``z ∈ ℂ``, to modes `n1` and `n2` of the state represented by `v`.
 """
 function GaussianStates.beamsplitter(v::SuperBosonMPS, z, n1, n2; kwargs...)
     phy1, anc1 = siteind(v, sb_index(n1)), siteind(v, sb_index(n1)+1)
@@ -42,8 +47,9 @@ function GaussianStates.beamsplitter(v::SuperBosonMPS, z, n1, n2; kwargs...)
     bs_phy = op("beamsplitter", phy1, phy2; angle=z)
     bs_anc = op("beamsplitter", anc1, anc2; angle=z)
 
-    v = apply(bs_phy, v; kwargs...)
-    # `apply` already moves the sites so that they are adjacent before actually applying
-    # the two-site operator, then it moves them back to their original position.
-    return apply(conj(bs_anc), v; kwargs...)
+    return apply([bs_phy, conj(bs_anc)], v; kwargs...)
+end
+
+function GaussianStates.beamsplitter(m::MPS, z, n1, n2; kwargs...)
+    return apply(op("beamsplitter", siteind(m, n1), siteind(m, n2); angle=z), m; kwargs...)
 end
