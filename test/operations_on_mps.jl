@@ -80,7 +80,7 @@ using GaussianBosonSamplingMPS: sb_index
         n_pre = expect(v, "n")
         @test sum(n_pre) == 1
 
-        w = beamsplitter(v, cospi(1/4), 1, 3)
+        w = beamsplitter(v, pi/4, 1, 3)
         n_post = expect(w, "n")
         @test sum(n_post) ≈ sum(n_pre)
 
