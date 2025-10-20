@@ -40,7 +40,7 @@ squeezed2_state_coeff(x, n) = squeezed2_state_coeff(abs(x), angle(x), n)
 
         coefficients_expected = [squeezed_state_coeff(z, n) for n in 0:maxn]
 
-        _, S = williamson(g.covariance_matrix)
+        _, S = williamson(covariancematrix(g))
         Ul, D, Ur = euler(S)
         coefficients_fc = [
             GaussianBosonSamplingMPS.franckcondon([n], Ul, D, Ur, [0]) for n in 0:maxn
@@ -87,7 +87,7 @@ squeezed2_state_coeff(x, n) = squeezed2_state_coeff(abs(x), angle(x), n)
         end
 
         # Another check.
-        _, S = williamson(g.covariance_matrix)
+        _, S = williamson(covariancematrix(g))
         Ul, D, Ur = euler(S)
         coefficients_fc = similar(coefficients_expected)
         for n1 in 0:maxn
@@ -136,7 +136,7 @@ squeezed2_state_coeff(x, n) = squeezed2_state_coeff(abs(x), angle(x), n)
         #
 
         # Another check.
-        _, S = williamson(g.covariance_matrix)
+        _, S = williamson(covariancematrix(g))
         Ul, D, Ur = euler(S)
         coefficients_fc = Diagonal([
             GaussianBosonSamplingMPS.franckcondon([n, n], Ul, D, Ur, [0, 0]) for n in 0:maxn
@@ -183,7 +183,7 @@ squeezed2_state_coeff(x, n) = squeezed2_state_coeff(abs(x), angle(x), n)
 
         # Check.
         coefficients_fc = Matrix{ComplexF64}(undef, maxn+1, maxn+1)
-        _, S = williamson(Symmetric(g.covariance_matrix))
+        _, S = williamson(Symmetric(covariancematrix(g)))
         for n1 in 0:maxn
             for n2 in 0:maxn
                 coefficients_fc[n1 + 1, n2 + 1] = GaussianBosonSamplingMPS.franckcondon(
@@ -226,9 +226,9 @@ squeezed2_state_coeff(x, n) = squeezed2_state_coeff(abs(x), angle(x), n)
         beamsplitter!(g, η, 2, 3)
         b23 = GaussianStates._beamsplittermatrix(Float64, η)
 
-        d, r = williamson(Symmetric(g.covariance_matrix))
+        d, r = williamson(Symmetric(covariancematrix(g)))
         @test d ≈ I
-        d23, r23 = williamson(Symmetric(partialtrace(g, 1).covariance_matrix))
+        d23, r23 = williamson(Symmetric(covariancematrix(partialtrace(g, 1))))
 
         v = MPS(g; maxdim=maxdim, maxnumber=maxn)
 

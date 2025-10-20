@@ -4,7 +4,7 @@
 
     # With mixed states
     sites = sb_siteinds(; nmodes=nmodes, maxnumber=maxnumber)
-    v = MPS(ComplexF64, sites, "0")
+    v = SuperBosonMPS(ComplexF64, sites, "0")
     @test iszero(firstmoments(v))
     @test covariancematrix(v) ≈ I
 
@@ -36,5 +36,5 @@ const rtol = 1e-6
     vv = sb_outer(v)
     #@test firstmoments(vv) ≈ 0 won't work, we can't use `isapprox` with zero
     @test norm(firstmoments(vv)) < atol
-    @test covariancematrix(vv) ≈ g.covariance_matrix rtol=rtol
+    @test covariancematrix(vv) ≈ covariancematrix(g) rtol=rtol
 end

@@ -20,7 +20,7 @@ include("mps_construction.jl")
 export SuperBosonMPS, measure, sb_siteinds, sb_outer, sample
 include("superbosons.jl")
 
-export attenuate, firstmoments, covariancematrix
+export attenuate
 include("mps_operations/moments.jl")
 include("mps_operations/squeeze.jl")
 include("mps_operations/squeeze2.jl")

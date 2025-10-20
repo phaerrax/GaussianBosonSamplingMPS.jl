@@ -1,7 +1,7 @@
 name = "GaussianBosonSamplingMPS"
 uuid = "ab5b1ad5-4448-4875-a3d4-2d0e76b80af8"
 authors = ["Davide Ferracin <davide.ferracin@protonmail.com>"]
-version = "0.4.0"
+version = "0.4.1"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
@@ -16,4 +16,4 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SCS = "c946c3f1-0d1f-5ce8-9dea-7daa1f7e2d13"
 
 [compat]
-GaussianStates = ">=0.1.2"
+GaussianStates = ">=0.1.4"
