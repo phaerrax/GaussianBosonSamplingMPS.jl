@@ -30,8 +30,7 @@ requirejs.config({
       "highlight"
     ]
   }
-}
-});
+}});
 ////////////////////////////////////////////////////////////////////////////////
 require(['mathjax'], function(MathJax) {
 MathJax.Hub.Config({
@@ -51,6 +50,10 @@ MathJax.Hub.Config({
       ],
       "dd": [
         "\\mathrm{d}"
+      ],
+      "conj": [
+        "\\bar{#1}",
+        1
       ],
       "bra": [
         "\\langle #1 \\rvert",
@@ -111,8 +114,7 @@ MathJax.Hub.Config({
     "TeX/autobold.js",
     "TeX/autoload-all.js"
   ]
-}
-);
+});
 
 })
 ////////////////////////////////////////////////////////////////////////////////
