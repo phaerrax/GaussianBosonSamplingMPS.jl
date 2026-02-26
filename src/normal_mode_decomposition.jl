@@ -99,7 +99,7 @@ value in `vals`, and `S` is the symplectic matrix from the Williamson decomposit
 The output satisfies the following identities:
 
 ```julia-repl
-julia> D, S = williamson(Symmetric(g.covariance_matrix));
+julia> D, S = williamson(Symmetric(covariancematrix(g)));
 
 julia> d = diag(D)[1:2:end];
 
@@ -120,7 +120,7 @@ true
 * [Serafini2023](@cite) Serafini, A. (2023)
 """
 function normal_mode_decomposition(g::GaussianState, N, maxnumber; kwargs...)
-    D, S = williamson(Symmetric(g.covariance_matrix))
+    D, S = williamson(Symmetric(covariancematrix(g)))
     sp_evals = diag(D)[1:2:end]
     nm_evals, num_idxs = largest_normal_mode_eigenvalues(sp_evals, N, maxnumber; kwargs...)
     return nm_evals, num_idxs, S

@@ -2,7 +2,7 @@
     optimise(g::GaussianState; verbose=false, scs_eps=nothing)
 
 Return `gₚ, W` where `gₚ` is a new Gaussian state and `W` is a positive semi-definite
-matrix such that `W + gₚ.covariance_matrix == g.covariance_matrix` and `gₚ` contains a
+matrix such that `W + covariancematrix(gₚ) == covariancematrix(g)` and `gₚ` contains a
 smaller number of photons.
 
 Set `verbose = true` to print the information provided by SCS about the optimisation.
@@ -19,7 +19,7 @@ function optimise(g::GaussianState; verbose=false, scs_eps=nothing)
 
     @variable(model, x[1:(2n), 1:(2n)] in PSDCone())
     @objective(model, Min, tr(x))  # minimise photon number
-    @constraint(model, g.covariance_matrix ≥ x, PSDCone())
+    @constraint(model, covariancematrix(g) ≥ x, PSDCone())
     @constraint(
         model,
         kron(I(2), x) + kron([[0, 1] [-1, 0]], GaussianStates._symplectic_matrix(n)) ≥ 0,
@@ -36,11 +36,11 @@ function optimise(g::GaussianState; verbose=false, scs_eps=nothing)
     sol = JuMP.value(x)
 
     # Put the solution into a new Gaussian state and show the new photon number
-    opt_g = GaussianState(g.first_moments, sol)
+    opt_g = GaussianState(firstmoments(g), sol)
     @debug string("Average photon number in optimised state: ", number(opt_g))
 
     @debug begin
-        ev, _ = eigen(Symmetric(opt_g.covariance_matrix))
+        ev, _ = eigen(Symmetric(covariancematrix(opt_g)))
         string("Eigenvalues of the optimised covariance matrix σₒₚₜ:\n", join(ev, "\n"))
     end
 
@@ -49,6 +49,6 @@ function optimise(g::GaussianState; verbose=false, scs_eps=nothing)
         string("Eigenvalues of σₒₚₜ + iΩ:\n", join(ev, "\n"))
     end
 
-    return opt_g, g.covariance_matrix - sol
+    return opt_g, covariancematrix(g) - sol
     # Vₚ, W from the paper
 end
