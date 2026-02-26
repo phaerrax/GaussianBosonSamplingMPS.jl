@@ -21,7 +21,9 @@ function optimise(g::GaussianState; verbose=false, scs_eps=nothing)
     @objective(model, Min, tr(x))  # minimise photon number
     @constraint(model, g.covariance_matrix ≥ x, PSDCone())
     @constraint(
-        model, kron(I(2), x) + kron([[0, 1] [-1, 0]], GaussianStates.Ω(n)) ≥ 0, PSDCone()
+        model,
+        kron(I(2), x) + kron([[0, 1] [-1, 0]], GaussianStates._symplectic_matrix(n)) ≥ 0,
+        PSDCone()
     )  # uncertainty relations
 
     if !isnothing(scs_eps)
@@ -43,7 +45,7 @@ function optimise(g::GaussianState; verbose=false, scs_eps=nothing)
     end
 
     @debug begin
-        ev, _ = eigen(opt_g.covariance_matrix + im * GaussianStates.Ω(n))
+        ev, _ = eigen(covariancematrix(opt_g) + im * GaussianStates._symplectic_matrix(n))
         string("Eigenvalues of σₒₚₜ + iΩ:\n", join(ev, "\n"))
     end
 
