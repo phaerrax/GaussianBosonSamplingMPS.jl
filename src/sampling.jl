@@ -100,7 +100,7 @@ function sample_displaced(
     samples = Matrix{UInt8}(undef, n, nbatches * batchsize)
     pbar = Progress(nbatches; desc="Sampling...")
     Threads.@threads for b in 1:nbatches
-        ψ_displaced = displace_pure(ψ, αs[:, b])  # displace the state
+        ψ_displaced = displace(ψ, αs[:, b])  # displace the state
         orthogonalize!(ψ_displaced, 1)
         for j in 1:batchsize
             # Sample from the MPS.

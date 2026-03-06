@@ -1,6 +1,6 @@
 name = "GaussianBosonSamplingMPS"
 uuid = "ab5b1ad5-4448-4875-a3d4-2d0e76b80af8"
-version = "0.4.2"
+version = "0.4.3"
 authors = ["Davide Ferracin <davide.ferracin@protonmail.com>"]
 
 [workspace]
