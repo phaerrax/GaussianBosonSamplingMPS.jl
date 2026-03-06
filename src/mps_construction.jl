@@ -66,7 +66,7 @@ function franckcondon(m, α, Ul, S, Ur, n)
     ζ = αext - B * conj(αext)
     T =
         exp(-1 / 2 * (norm(αext)^2 - dot(αext, B, conj(αext)))) /
-        sqrt(prod(@. factorial(p) * cosh(Λ)))
+        sqrt(prod(@. gamma(p+1) * cosh(Λ)))
 
     R = prod(@. cosh(t) / (tanh(t))^n)
     p_inds = unroll(p)
@@ -94,7 +94,7 @@ function franckcondon(m, Ul, S, Ur, n)
     p = [m; n]
 
     B = uVl * Diagonal(tanh.(Λ)) * transpose(uVl)
-    T = 1 / sqrt(prod(@. factorial(p) * cosh(Λ)))
+    T = 1 / sqrt(prod(@. gamma(p+1) * cosh(Λ)))
     R = prod(@. cosh(t) / (tanh(t))^n)
 
     p_inds = unroll(p)

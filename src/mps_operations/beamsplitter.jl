@@ -10,7 +10,7 @@ function _beamsplitter_coefficient(z, n′, m′, n, m, k, l)
     else
         binomial(n, k) *
         binomial(m, l) *
-        sqrt(factorial(k+m-l) * factorial(n-k+l) / (factorial(n) * factorial(m))) *
+        sqrt(gamma(1+k+m-l) * gamma(1+n-k+l) / (gamma(1+n) * gamma(1+m))) *
         cos(r)^(k+l) *
         sin(r)^(n-k+m-l) *
         (-cis(-θ * (n-k))) *

@@ -1,7 +1,10 @@
 name = "GaussianBosonSamplingMPS"
 uuid = "ab5b1ad5-4448-4875-a3d4-2d0e76b80af8"
+version = "0.4.2"
 authors = ["Davide Ferracin <davide.ferracin@protonmail.com>"]
-version = "0.4.1"
+
+[workspace]
+projects = ["docs", "test"]
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
@@ -14,6 +17,7 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SCS = "c946c3f1-0d1f-5ce8-9dea-7daa1f7e2d13"
+SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 
 [compat]
 GaussianStates = ">=0.1.4"

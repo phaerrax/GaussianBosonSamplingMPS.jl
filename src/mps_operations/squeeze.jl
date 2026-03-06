@@ -6,14 +6,14 @@ function _squeeze_coefficient(z, n, m)
     # on the eigenbasis {f(n)}ₙ of the number operator (Marian, 1992).
     r, θ = abs(z), angle(z)
     return if iseven(n) && iseven(m)
-        (-1)^div(m, 2) / (factorial(div(m, 2)) * factorial(div(n, 2))) *
-        sqrt(factorial(n)*factorial(m)/cosh(r)) *
+        (-1)^div(m, 2) / (gamma(1 + div(m, 2)) * gamma(1+div(n, 2))) *
+        sqrt(gamma(1+n)*gamma(1+m)/cosh(r)) *
         cis((n-m)*θ/2) *
         (tanh(r)/2)^div(n+m, 2) *
         pFq((-div(m, 2), -div(n, 2)), (1/2,), -sinh(r)^(-2))
     elseif isodd(n) && isodd(m)
-        (-1)^div(m-1, 2) / (factorial(div(m-1, 2)) * factorial(div(n-1, 2))) *
-        sqrt(factorial(n)*factorial(m)/(cosh(r)^3)) *
+        (-1)^div(m-1, 2) / (gamma(1+div(m-1, 2)) * gamma(1+div(n-1, 2))) *
+        sqrt(gamma(1+n)*gamma(1+m)/(cosh(r)^3)) *
         cis((n-m)*θ/2) *
         (tanh(r)/2)^(div(n+m, 2)-1) *
         pFq((-div(m-1, 2), -div(n-1, 2)), (3/2,), -sinh(r)^(-2))
