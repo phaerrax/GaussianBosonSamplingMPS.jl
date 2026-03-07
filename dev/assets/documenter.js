@@ -59,8 +59,15 @@ MathJax.Hub.Config({
         "\\langle #1 \\rvert",
         1
       ],
+      "pure": [
+        "_{\\mathrm{p}}"
+      ],
       "real": [
         "\\operatorname{Re}"
+      ],
+      "abs": [
+        "\\lvert #1 \\rvert",
+        1
       ],
       "opt": [
         "_{\\mathrm{opt}}"
@@ -71,11 +78,19 @@ MathJax.Hub.Config({
       "R": [
         "\\mathbb{R}"
       ],
+      "norm": [
+        "\\lVert #1 \\rVert",
+        1
+      ],
       "det": [
         "\\operatorname{det}"
       ],
       "adj": [
         "#1^\\dagger",
+        1
+      ],
+      "displacement": [
+        "\\mathcal{D}_{#1}",
         1
       ],
       "transpose": [
