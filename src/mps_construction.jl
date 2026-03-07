@@ -176,9 +176,9 @@ function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2, kw
     @debug _inspect_normal_mode_decomposition(nm_evals, num_idxs[1], 0, N, maxdim)
     # This is the normal-mode decomposition of a pure state, so we should find only one
     # eigenvalue, 1, corresponding to the vacuum.
-    # It miiiight not be the case if the covariance matrix comes from the convex
+    # This miiiight not be the case if the covariance matrix comes from the convex
     # optimisation routine, where the precision is well below the default settings of
-    # `isapprox`; we need to make this function work in that case anyway.
+    # `isapprox`, but we need to make this function work in that case anyway.
     # Old approach: the following assertions.
     #
     #   @assert length(nm_evals_right) == length(num_idxs_right) == 1
@@ -197,7 +197,7 @@ function mps_matrices(g::GaussianState, maxdim, maxnumber; nvals=nmodes(g)^2, kw
     # that its corresponding number state is the vacuum, then discard everything else.
     largest_mode1_eval = argmax(first, zip(nm_evals, num_idxs[1]))
     if abs(first(largest_mode1_eval) - 1) > purity_atol
-        errmsg = "state is not 1, but $(first(largest_mode1_eval))"
+        errmsg = "the largest eigenvalue of the state is not 1, but $(first(largest_mode1_eval))"
         throw(error(errmsg))
     end
     if !iszero(last(largest_mode1_eval))

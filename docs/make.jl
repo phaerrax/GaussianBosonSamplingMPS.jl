@@ -17,7 +17,7 @@ makedocs(;
     pages=[
         "Home" => "index.md",
         "Reference" => "reference.md",
-        "Examples" => ["examples/borealis.md"],
+        "Tutorial" => "examples/borealis.md",
     ],
     plugins=[bib],
     format=Documenter.HTML(;
@@ -27,6 +27,8 @@ makedocs(;
                     :Macros => Dict(
                         :ket => [raw"\lvert #1 \rangle", 1],
                         :bra => [raw"\langle #1 \rvert", 1],
+                        :abs => [raw"\lvert #1 \rvert", 1],
+                        :norm => [raw"\lVert #1 \rVert", 1],
                         :transpose => [raw"#1^{\mathrm{T}}", 1],
                         :conj => [raw"\bar{#1}", 1],
                         :adj => [raw"#1^\dagger", 1],
@@ -38,7 +40,9 @@ makedocs(;
                         :dd => [raw"\mathrm{d}"],
                         :det => [raw"\operatorname{det}"],
                         :opt => [raw"_{\mathrm{opt}}"],
+                        :pure => [raw"_{\mathrm{p}}"],
                         :tr => [raw"\operatorname{tr}"],
+                        :displacement => [raw"\mathcal{D}_{#1}", 1],
                     ),
                 ),
             ),

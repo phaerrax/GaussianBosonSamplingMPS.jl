@@ -47,19 +47,20 @@ function sample_displaced(
     #             πⁿ √det(Y) ╯ℝ²ⁿ
     #
     # with n = d/2, and has the effect of adding Y to the covariance matrix of the Gaussian
-    # state. We already have Y = W, so we need to use Σ = W/2.
+    # state. We already have Y = W, from the initial σ = σₚ + W decomposition, so we need to
+    # use Σ = W/2.
     #
-    # However, this works only if W is positive. In our case W may be only positive
+    # However, this works only if W is positive. In our case W might be positive
     # semi-definite, so we need a modified version of the formula above, in which basically
     # the integration is performed only on the subspace of ℝ²ⁿ orthogonal to Y's kernel.
-    # Let m = 2n - dim(ker Y):
+    # Let m = 2n - dim(ker Y): then
     #
     #                   1      ╭
-    #   Φ(ρ; Y) = ──────────── │   exp(−∑ⱼ λⱼ⁻¹uⱼ²) Dₓ ρ Dₓ * du =
+    #   Φ(ρ; Y) = ──────────── │   exp(−∑ⱼ λⱼ⁻¹uⱼ²) Dₓ ρ Dₓ* du =
     #             (√π)ᵐ ∏ⱼ √λⱼ ╯ℝᵐ
     #
     #                1     ╭
-    #           = ──────── │   exp(−uᵀ Λ⁻¹ u) Dₓ ρ Dₓ * du
+    #           = ──────── │   exp(−uᵀ Λ⁻¹ u) Dₓ ρ Dₓ* du
     #             √det(πΛ) ╯ℝᵐ
     #
     # where x = Mᵀu, the λⱼ's are the non-zero eigenvalues of Y (collected in the diagonal
@@ -71,8 +72,8 @@ function sample_displaced(
     W_evals, M = eigen(Symmetric(W); sortby=-)
     # Wrap `W` in a `Symmetric` constructor so that `eigen` knows that it's symmetric: this
     # way we're sure that M is real and orthogonal, and not just approximately so.
-    # The `sortby=-` tells `eigen` to return the decomposition with the eigenvalues in
-    # decreasing order.
+    # The `sortby=-` option tells `eigen` to return the decomposition with the eigenvalues
+    # in decreasing order.
     Λ = Diagonal(filter(x -> abs(x) > eval_atol, W_evals))
 
     random_displacement_dist = MvNormal(Λ/2)

@@ -22,6 +22,10 @@ ported from _The Walrus_ [Gupt2019](@cite).
 - Sample from the outcome of a lossy Gaussian boson sampling experiment with
   the classical MPS-based algorithm described in [Oh2024](@cite).
 
+See [Reference](@ref) for a complete list of features, and
+[Borealis experiment](@ref) for a hands-on guide of the simulation of a
+Gaussian boson-sampling experiment.
+
 ## Bibliography
 
 ```@bibliography
