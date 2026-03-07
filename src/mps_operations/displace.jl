@@ -6,7 +6,7 @@ function _displace_coefficient(z, n′, n, k, l)
     # on the eigenbasis {f(n)}ₙ of the number operator.
     return if n′ - k == n - l
         exp(-0.5abs2(z)) * z^k * (-conj(z))^l / sqrt(gamma(k+1) * gamma(l+1)) *
-        sqrt(binomial(n′, k) * binomial(n, l))
+        sqrt(binomial(float(n′), k) * binomial(float(n), l))
     else
         zero(z)
     end

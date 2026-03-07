@@ -3,7 +3,7 @@
 function _attenuator_coefficient(attenuation, k, n, m)
     # The matrix element ⟨fₙ, Bₖ fₘ⟩ where fₙ is the number eigenbasis element with
     # number `n`.
-    return sqrt(binomial(n + k, k)) *
+    return sqrt(binomial(float(n + k), k)) *
            sqrt(1 - attenuation^2)^k *
            attenuation^n *
            ((n + k == m) ? one(attenuation) : zero(attenuation))

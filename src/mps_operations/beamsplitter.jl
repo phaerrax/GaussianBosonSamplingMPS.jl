@@ -8,8 +8,8 @@ function _beamsplitter_coefficient(z, n′, m′, n, m, k, l)
     return if (k != n′-m+l) || (n′+m′ != n+m)
         zero(z)
     else
-        binomial(n, k) *
-        binomial(m, l) *
+        binomial(float(n), k) *
+        binomial(float(m), l) *
         sqrt(gamma(1+k+m-l) * gamma(1+n-k+l) / (gamma(1+n) * gamma(1+m))) *
         cos(r)^(k+l) *
         sin(r)^(n-k+m-l) *
