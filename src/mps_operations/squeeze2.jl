@@ -6,7 +6,12 @@ function _squeeze2_coefficient(z, n′, m′, n, m, k, l)
         r, ψ = abs(z), angle(z)
         ν = sinh(r) * cis(ψ)
         μ = cosh(r)
-        sqrt(binomial(float(n′), k) * binomial(float(m′), k) * binomial(float(n), l) * binomial(float(m), l)) *
+        sqrt(
+            binomial(float(n′), k) *
+            binomial(float(m′), k) *
+            binomial(float(n), l) *
+            binomial(float(m), l),
+        ) *
         (ν/μ)^k *
         (-conj(ν)/μ)^l *
         μ^(-(m+n-2l+1))
