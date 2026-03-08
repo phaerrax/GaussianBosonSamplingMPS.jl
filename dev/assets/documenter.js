@@ -39,6 +39,10 @@ window.MathJax = {
     ],
     "inlineMath": [
       [
+        "$",
+        "$"
+      ],
+      [
         "\\(",
         "\\)"
       ]
