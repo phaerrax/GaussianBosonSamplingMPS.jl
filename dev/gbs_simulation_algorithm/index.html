@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Mathematical background · GaussianBosonSamplingMPS</title><meta name="title" content="Mathematical background · GaussianBosonSamplingMPS"/><meta property="og:title" content="Mathematical background · GaussianBosonSamplingMPS"/><meta property="twitter:title" content="Mathematical background · GaussianBosonSamplingMPS"/><meta name="description" content="Documentation for GaussianBosonSamplingMPS."/><meta property="og:description" content="Documentation for GaussianBosonSamplingMPS."/><meta property="twitter:description" content="Documentation for GaussianBosonSamplingMPS."/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">GaussianBosonSamplingMPS</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../reference/">Reference</a></li><li class="is-active"><a class="tocitem" href>Mathematical background</a><ul class="internal"><li><a class="tocitem" href="#Gaussian-states"><span>Gaussian states</span></a></li><li><a class="tocitem" href="#Construction-of-the-matrix-product-state"><span>Construction of the matrix-product state</span></a></li></ul></li><li><a class="tocitem" href="../examples/borealis/">Tutorial</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Mathematical background</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Mathematical background</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/phaerrax/GaussianBosonSamplingMPS.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/phaerrax/GaussianBosonSamplingMPS.jl/blob/main/docs/src/gbs_simulation_algorithm.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Mathematical-background"><a class="docs-heading-anchor" href="#Mathematical-background">Mathematical background</a><a id="Mathematical-background-1"></a><a class="docs-heading-anchor-permalink" href="#Mathematical-background" title="Permalink"></a></h1><p>In this page we will analyse the algorithm for simulating the outcomes of a Gaussian boson-sampling experiment in more detail. Since the formulae are already quite heavy by themselves, we will not use the braket notation, opting for a leaner mathematical style.</p><h2 id="Gaussian-states"><a class="docs-heading-anchor" href="#Gaussian-states">Gaussian states</a><a id="Gaussian-states-1"></a><a class="docs-heading-anchor-permalink" href="#Gaussian-states" title="Permalink"></a></h2><p>We start by laying out some notation and fundamental facts about Gaussian states that we will need later.</p><h3 id="Definition"><a class="docs-heading-anchor" href="#Definition">Definition</a><a id="Definition-1"></a><a class="docs-heading-anchor-permalink" href="#Definition" title="Permalink"></a></h3><p>Our context is the Hilbert space of \(M\) bosonic modes.  For a single mode the space is the Fock space \(\fockb(\C) \iso \lseq(\C)\), and for \(M\) modes we have \(\fockb(\C)\tsp{M} \iso \fockb(\C^M)\).  For \(n\in\N\), we call \(\ns{n}\in\fockb(\C)\) the eigenvector of the number operator with eigenvalue \(n\), and for a multi-index \(\multi{n}=(n\sb1,\dotsc,n\sb{M})\in\N^M\) we define \(\ns{\multi{n}}\in\fockb(\C)\tsp{M}\) as \(\ns{n\sb1} \otimes \dotsb \otimes \ns{n\sb{M}}\).  These vector form an orthonormal basis of the overall Fock space; \(\ns{0}\) is also the vacuum vector, which we will denote by \(\vacuum\).</p><p>Let \(R\) be a vector collecting the single-mode position and momentum operators as \(\xpvec\sb{2j-1} \defeq x\sb{j}\) and \(\xpvec\sb{2j} \defeq p\sb{j}\), for \(j\in\{1,\dotsc,M\}\).  A Gaussian state \(\rho\) on \(\fockb(\C^M)\) is completely determined by its first and second moments, gathered in the vector \(r\) and in the <em>covariance matrix</em> \(\covmat\) defined as</p><p class="math-container">\[\begin{gather*}
+    \fmom_j \defeq
+    \tr(\rho \xpvec_j),\\
+    \sigma_{jk} \defeq
+    \tr\bigl(\rho \fcomm{(\xpvec-\fmom)_j, (\xpvec-\fmom)_k}\bigr) =
+    \tr(\rho \fcomm{\xpvec_j,\xpvec_k}) - 2\fmom_j\fmom_k
+\end{gather*}\]</p><p>for \(j,k\in\{1,\dotsc,2M\}\). Covariance matrices are always positive-definite and satisfy \(\covmat+\iu\sympmat \geq 0\), where</p><p class="math-container">\[\sympmat \defeq \imat[M] \otimes
+\begin{pmatrix}
+  0  &amp; 1\\
+  -1 &amp; 0
+\end{pmatrix}\]</p><p>is the reference symplectic matrix. We will denote by \(\gauss{\fmom,\covmat}\) the Gaussian state given by its covariance matrix \(\covmat\) and the vector \(\fmom\) of its first moments, or just \(\gauss{\covmat}\) if \(\fmom=0\), as is often the case.</p><h3 id="Unitary-representation-of-the-symplectic-group-on-a-Fock-space"><a class="docs-heading-anchor" href="#Unitary-representation-of-the-symplectic-group-on-a-Fock-space">Unitary representation of the symplectic group on a Fock space</a><a id="Unitary-representation-of-the-symplectic-group-on-a-Fock-space-1"></a><a class="docs-heading-anchor-permalink" href="#Unitary-representation-of-the-symplectic-group-on-a-Fock-space" title="Permalink"></a></h3><div class="admonition is-todo" id="Todo-429d1aa7e38d935a"><header class="admonition-header">Todo<a class="admonition-anchor" href="#Todo-429d1aa7e38d935a" title="Permalink"></a></header><div class="admonition-body"><p>Representations \(\spunitarysymbol\) of \(\Sp{2n,\R}\) on the space of unitary operators on \(\fockb(\C)^n\).</p></div></div><h3 id="Normal-mode-decomposition"><a class="docs-heading-anchor" href="#Normal-mode-decomposition">Normal-mode decomposition</a><a id="Normal-mode-decomposition-1"></a><a class="docs-heading-anchor-permalink" href="#Normal-mode-decomposition" title="Permalink"></a></h3><p>The covariance matrix can always be diagonalised through a symplectic transformation: there always exist \(S\in\Sp{2M,\R}\) and \(\{\lambda\sb{j}\}\sb{j=1}^{M}\), \(\lambda\sb{j} \geq 1\) such that</p><p class="math-container">\[\begin{equation}
+    \covmat =
+    S \biggl( \bigoplus_{j=1}^{M} \lambda_j\imat[2] \biggr) \transpose{S}
+\label{eq:covmat-symplectic-diagonalisation}
+\end{equation}\]</p><p>(cfr. Eq. (3.58) in [<a href="../#Serafini2023">6</a>]). The <em>symplectic eigenvalues</em> \(\lambda\sb{j}\) determine, in turn, the singular values of the whole state, which can be written as</p><p class="math-container">\[\begin{equation}
+    \gauss{\fmom,\covmat} =
+    \displacement{r} \spunitary{S} \Biggl(
+        \bigotimes_{j=1}^{M} \biggl(
+            \sum_{m=0}^{+\infty} \nu_m(\lambda_j) \outp{\ns{m}}{\ns{m}}
+        \biggr)
+    \Biggr)
+    \adj{\spunitary{S}} \adj{\displacement{r}}
+\label{eq:gaussian-state-normal-mode-decomposition}
+\end{equation}\]</p><p>where \(\spunitary{S}\) is the unitary map on \(\fockb(\C)\tsp{M}\) generated by the symplectic matrix \(S\) appearing in \eqref{eq:covmat-symplectic-diagonalisation}, \(\displacement{r}\) is the displacement operator by \(r\) and</p><p class="math-container">\[\nu_m(x) \defeq \frac{2}{x+1}\biggl(\frac{x-1}{x+1}\biggr)^m.\]</p><p>We can rewrite this by exchanging tensor product and sum, obtaining</p><p class="math-container">\[\begin{equation}
+    \gauss{\fmom,\covmat} =
+    \displacement{r} \spunitary{S} \Biggl(
+        \sum_{\multi{m} \in \N^M} \biggl(
+            \prod_{j=1}^{M} \nu_{m_j}(\lambda_j)
+        \biggr)
+        \outp{\ns{\multi{m}}}{\ns{\multi{m}}}
+    \Biggr)
+    \adj{\spunitary{S}} \adj{\displacement{r}}
+\label{eq:normal-mode-decomposition}
+\end{equation}\]</p><p>or, by defining \(\hat{\nu}\sb{\multi{m}}(\lambda) \defeq \prod\sb{j=1}^{M} \nu\sb{m\sb{j}}(\lambda\sb{j})\),</p><p class="math-container">\[\begin{equation}
+    \gauss{\fmom,\covmat} =
+    \sum_{\multi{m} \in \N^M} \hat{\nu}_\multi{m}(\lambda) \,
+    \displacement{r} \spunitary{S}
+    \outp{\ns{\multi{m}}}{\ns{\multi{m}}}
+    \adj{\spunitary{S}} \adj{\displacement{r}}.
+\label{eq:gaussian-state-normal-mode-decomposition2}
+\end{equation}\]</p><p>We can see that the vectors \(\displacement{r} \spunitary{S} \ns{\multi{m}}\) form an orthonormal basis of eigenvectors of \(\gauss{\fmom,\covmat}\), with eigenvalues \(\hat{\nu}\sb{\multi{m}}(\lambda)\).  Note that this is <em>both</em> a diagonalisation and a singular value decomposition (not too obvious in general), since all the eigenvalues are positive.</p><div class="admonition is-info" id="Ordering-the-eigenvalues-a9b785b90417b2cc"><header class="admonition-header">Ordering the eigenvalues<a class="admonition-anchor" href="#Ordering-the-eigenvalues-a9b785b90417b2cc" title="Permalink"></a></header><div class="admonition-body"><p>There&#39;s no clear way to establish a total order on the eigenvalues: we know \(\nu\sb{m}\) is decreasing in its argument, and always less than one, for each \(m\), moreover \(\nu\sb{m}(x) \leq \nu\sb{m&#39;}(x&#39;)\) for any \(x, x&#39; \geq 1\) if \(m&#39; &gt; m\). When we consider \(\hat{\nu}\), however, it&#39;s more difficult: we can only say that \(\hat{\nu}\sb{\multi{m}}(\lambda) &lt; \hat{\nu}\sb{\multi{m}&#39;}(\lambda)\) if \(\multi{m} &gt; \multi{m}&#39;\) lexicographically, but still this leaves us with some multiindices we cannot compare. So, how do we compute the first \(\chi\) singular values?</p></div></div><h2 id="Construction-of-the-matrix-product-state"><a class="docs-heading-anchor" href="#Construction-of-the-matrix-product-state">Construction of the matrix-product state</a><a id="Construction-of-the-matrix-product-state-1"></a><a class="docs-heading-anchor-permalink" href="#Construction-of-the-matrix-product-state" title="Permalink"></a></h2><p>Suppose we know the covariance matrix \(\covmat\sb{\psi}\) and the vector \(\fmom\sb{\psi}\) of first moments of a pure Gaussian state \(\psi\) over \(M\) bosonic modes.  We want to find a matrix-product state representation of \(\psi\),</p><p class="math-container">\[\sum_{m_1=1}^{d} \sum_{m_2=1}^{d} \dotsi \sum_{m_M=1}^{d}
+A^{(1,m_1)}
+A^{(2,m_2)}
+\dotsm
+A^{(M,m_M)}
+\,
+f_{m_1} \otimes f_{m_2} \otimes \dotsb \otimes f_{m_M}\]</p><p>in the eigenbasis \(\ns{\multi{m}}\) of the number operator. We will follow the algorithm presented in [<a href="../#Oh2024">1</a>]. The full, “true” form of the state</p><p class="math-container">\[\psi =
+\sum_{\multi{m}\in\N^M} c_{m_1,\dotsc,m_M}
+\ns{m_1} \otimes \dotsb \otimes \ns{m_M}\]</p><p>cannot usually be known, and we will use what we know from \(\covmat\sb{\psi}\) and \(\fmom\sb{\psi}\) to reconstruct, to a certain degree of approximation, the array \(c\) of coefficients. We start by splitting the first mode from the other ones through a Schmidt decomposition:</p><p class="math-container">\[\begin{equation}
+    \psi =
+    \sum_{m\in\N^M} c_{m_1,\dotsc,m_M}
+    \ns{m_1} \otimes \dotsb \otimes \ns{m_M} =
+    \sum_{\alpha_1=1}^{+\infty} \lambda\modepart{1}_{\alpha_1}
+    b\modepart{1}_{\alpha_1} \otimes b\modepart{2\cdots M}_{\alpha_1},
+\label{eq:first-schmidt-decomposition}
+\end{equation}\]</p><p>where \(\lambda\modepart{1}\sb{\alpha\sb1} \geq 0\), \(\{b\modepart{1}\sb{\alpha\sb1}\}\sb{\alpha\sb1}\) is an orthonormal set in the Fock space of the first mode, and \(\{b\modepart{2\cdots M}\sb{\alpha\sb1}\}\sb{\alpha\sb1}\) is an orthonormal set in the collective Fock space of modes \(2\) to \(M\). We write \(b\modepart{1}\sb{\alpha\sb1}\) as a linear combination of the \(\ns{m}\) eigenvectors on the first mode:</p><p class="math-container">\[b\modepart{1}_{\alpha_1} = \sum_{m_1\in\N}B\modepart{1}_{\alpha_1,m_1} \ns{m_1}
+\quad\implies\quad
+\psi =
+\sum_{\alpha_1=1}^{+\infty} \sum_{m_1\in\N}
+\lambda\modepart{1}_{\alpha_1}
+B\modepart{1}_{\alpha_1,m_1} \ns{m_1}
+\otimes b\modepart{2\cdots M}_{\alpha_1}\]</p><p>and identify \(\lambda\modepart{1}\sb{\alpha\sb1} B\modepart{1}\sb{\alpha\sb1,m\sb1}\) with the first tensor of the MPS, \(A^{(1,m\sb1)}\sb{\alpha\sb1}\).  Since both the \(b\modepart{2\cdots M}\sb{\alpha\sb1}\) and the \(\ns{m\sb1}\) vectors form eigenbases of their respective spaces, we have</p><p class="math-container">\[A^{(1,m_1)}_{\alpha_1} =
+\innp{\ns{m_1} \otimes b\modepart{2\cdots M}_{\alpha_1}}{\psi}.\]</p><p>We need a way to compute this inner product in a simpler way, since we don&#39;t have access either to the full state \(\psi\) or to all eigenvectors \(b\modepart{2\cdots M}\sb{\alpha\sb1}\) from the decomposition \eqref{eq:first-schmidt-decomposition}.</p><p>The first step is using the Williamson decomposition of \(\psi\): since it&#39;s a pure state, there exists \(S\in\Sp{2M,\R}\) such that \(\covmat\sb\psi=S\transpose{S}\), i.e. \(\psi = \spunitary{S}\vacuum\). We also know that the reduced state \(\rho\modepart{2\cdots M} = \tr\sb1 \outp{\psi}{\psi}\) on modes \(2\) to \(M\) can be written in terms of the output of the Schmidt decomposition as</p><p class="math-container">\[\begin{equation}
+    \rho\modepart{2\cdots M} =
+    \sum_{\alpha_1=1}^{+\infty} (\lambda\modepart{1}_{\alpha_1})^2
+    \outp{b\modepart{2\cdots M}_{\alpha_1}}{b\modepart{2\cdots M}_{\alpha_1}}.
+\label{eq:svd-reduced-state-2-to-M}
+\end{equation}\]</p><p>At the same time, we can easily obtain the moments \(\covmat&#39; \defeq \covmat\modepart{2\cdots M}\) and \(r&#39; \defeq \fmom\modepart{2\cdots M}\) of the reduced state by selecting from the original matrix and vector the rows and columns relative to these modes.  We compute the Williamson decomposition of the covariance matrix of the reduced state: \(\covmat&#39; = S&#39; Z \transpose{{S&#39;}}\), where \(Z\) is a diagonal matrix containing the symplectic eigenvalues \(\{z\sb{j}\}\sb{j=2}^{M}\) (which are greater than or equal to \(1\)), and as in Eq. \eqref{eq:normal-mode-decomposition} we write</p><p class="math-container">\[\begin{equation}
+    \rho\modepart{2\cdots M} =
+    \sum_{\multi{m} \in \N^{M-1}} \Biggl(\,\prod_{j=2}^{M} \nu_{m_j}(z_j)\Biggr)
+    \displacement{r&#39;} \spunitary{S&#39;}
+    \outp{%
+        \ns{\multi{m}}\modepart{2\cdots M}
+    }{%
+        \ns{\multi{m}}\modepart{2\cdots M}
+    }
+    \adj{\spunitary{S&#39;}} \adj{\displacement{r&#39;}}
+\label{eq:normal-modes-reduced-state-2-to-M}
+\end{equation}\]</p><p>Since the state is a positive-semidefinite operator and \((\lambda\modepart{1}\sb{\alpha\sb1})^2\) and \(\prod\sb{j=2}^{M} \nu\sb{m\sb{j}}(z\sb{j})\) are non-negative, both \eqref{eq:svd-reduced-state-2-to-M} and \eqref{eq:normal-modes-reduced-state-2-to-M} are the diagonalisation of \(\rho\modepart{2\cdots M}\) on an orthonormal eigenbasis. The eigenvalue-eigenvector pairs are unique as long as the eigenvalue is not degenerate, therefore, in that case, we have a one-to-one correspondence</p><p class="math-container">\[\begin{equation}
+    \bigl(
+        (\lambda\modepart{1}_{\alpha_1})^2,
+        b\modepart{2\cdots M}_{\alpha_1}
+    \bigr)
+    \Longleftrightarrow
+    \Biggl(\,
+        \prod_{j=2}^{M} \nu_{m_j}(z_j),
+        \displacement{r&#39;} \spunitary{S&#39;} \ns{\multi{m}}\modepart{2\cdots M}
+    \Biggr).
+\label{eq:svd-reduced-state-correspondence}
+\end{equation}\]</p><p>Assume we sorted \eqref{eq:svd-reduced-state-2-to-M} so that the terms in the sum are ordered with decreasing \((\lambda\sb{\alpha\sb1}\modepart{1})^2\). We want to find, from \eqref{eq:svd-reduced-state-correspondence}, the multi-indices \(\{\multi{m}\sb{\alpha\sb1}\}\sb{\alpha\sb1=1}^{\chi} \subset \N^{M-1}\) associated to the \(\chi\) largest eigenvalues. Once we know them, we can proceed to build the first tensor of the MPS as</p><p class="math-container">\[\begin{equation}
+    \begin{split}
+    A^{(1,m_1)}_{\alpha_1} &amp;=
+    \innp{%
+        \ns{m_1} \otimes
+        (\displacement{r&#39;} \spunitary{S&#39;} \ns{\multi{m}_{\alpha_1}})
+    }{%
+        \spunitary{S} \vacuum
+    } =\\ &amp;=
+    \innp{%
+        \ns{m_1} \otimes \ns{\multi{m}_{\alpha_1}}
+    }{%
+        \adj{\bigl( \id\modepart{1} \otimes
+        \displacement{r&#39;}\modepart{2\cdots M}
+        \spunitarymp[2\cdots M]{S&#39;} \bigr)}
+        \spunitary{S} \vacuum
+    }.
+    \end{split}
+\label{eq:first-mps-tensor}
+\end{equation}\]</p><p>as in Eq. (3) in [<a href="../#Oh2024">1</a>].</p><div class="admonition is-todo" id="How-to-find-the-largest-eigenvalues-950008d491e11719"><header class="admonition-header">How to find the largest eigenvalues<a class="admonition-anchor" href="#How-to-find-the-largest-eigenvalues-950008d491e11719" title="Permalink"></a></header><div class="admonition-body"><p>We know how to generate all elements on the right-hand side of \eqref{eq:svd-reduced-state-correspondence}. Assuming there is no degeneracy, the correspondence can be established by ordering both sides by decreasing singular value; then, if we want to compute the truncated SVD for the MPS compression, we could take the largest \(\chi\) items. But how exactly do we order the singular values? Explain how we do this in the package.</p></div></div><p>From now on, let&#39;s ignore displacement operators, since we usually start from \(\fmom=0\).  The symplectic matrix \(S&#39;\) on modes \(2\) to \(M\) can be extended to all \(M\) modes as \(\imat[2] \oplus S&#39;\), and in \eqref{eq:first-mps-tensor} we have</p><p class="math-container">\[\id\modepart{1} \otimes \spunitarymp[2\cdots M]{S&#39;} =
+\spunitary{\imat[2] \oplus S&#39;}\]</p><p>The group representation \(\spunitarysymbol\) is unitary, so we can replace \(\adj{\spunitary{A}}\) by \(\spunitary{A^{-1}}\) and then merge the two \(\spunitarysymbol\)s, obtaining</p><p class="math-container">\[\adj{ \bigl(\id\modepart{1} \otimes \spunitarymp[2\cdots M]{S&#39;}\bigr) }
+\spunitary{S} =
+\spunitary{\imat[2] \oplus (S&#39;)^{-1}} \spunitary{S} =
+\spunitary{(\imat[2] \oplus (S&#39;)^{-1}) S};\]</p><p>Now, we apply the Euler decompostion to the symplectic matrix \((\imat[2] \oplus (S&#39;)^{-1}) S\) to find two new symplectic (and orthogonal) matrices \(V\sb1, V\sb2 \in \Sp{2M,\R} \cap \Og{2M}\) and a diagonal matrix \(D = \diag(d\sb1,\dotsc,d\sb{M},d\sb1^{-1},\dotsc,d\sb{M}^{-1})\) with \(d\sb{j} \geq 1\) such that \((\imat[2] \oplus (S&#39;)^{-1}) S = V\sb1DV\sb2\). It follows that</p><p class="math-container">\[A^{(1,m_1)}_{\alpha_1} =
+\innp{%
+    \ns{m_1} \otimes \ns{\multi{m}_{\alpha_1}}
+}{%
+    \spunitary{V_1} \spunitary{D} \spunitary{V_2} \vacuum
+}.\]</p><p>This inner product can be computed following the algorithm presented in [<a href="../#Quesada2019">2</a>].</p><div class="admonition is-todo" id="To-be-continued...-2c4b1e0237703a5f"><header class="admonition-header">To be continued...<a class="admonition-anchor" href="#To-be-continued...-2c4b1e0237703a5f" title="Permalink"></a></header><div class="admonition-body"><p>Explain the next part of the algorithm, in which we compute the remaining tensors of the MPS.</p></div></div></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../reference/">« Reference</a><a class="docs-footer-nextpage" href="../examples/borealis/">Tutorial »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Sunday 8 March 2026 21:12">Sunday 8 March 2026</span>. Using Julia version 1.12.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

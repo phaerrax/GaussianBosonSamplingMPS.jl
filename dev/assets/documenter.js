@@ -5,7 +5,6 @@ requirejs.config({
     'headroom': 'https://cdnjs.cloudflare.com/ajax/libs/headroom/0.12.0/headroom.min',
     'jqueryui': 'https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/jquery-ui.min',
     'jquery': 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min',
-    'mathjax': 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js?config=TeX-AMS_HTML',
     'headroom-jquery': 'https://cdnjs.cloudflare.com/ajax/libs/headroom/0.12.0/jQuery.headroom.min',
     'highlight': 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min',
     'highlight-julia-repl': 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/julia-repl.min',
@@ -15,9 +14,6 @@ requirejs.config({
     "deps": [
       "highlight"
     ]
-  },
-  "mathjax": {
-    "exports": "MathJax"
   },
   "headroom-jquery": {
     "deps": [
@@ -32,35 +28,35 @@ requirejs.config({
   }
 }});
 ////////////////////////////////////////////////////////////////////////////////
-require(['mathjax'], function(MathJax) {
-MathJax.Hub.Config({
-  "jax": [
-    "input/TeX",
-    "output/HTML-CSS",
-    "output/NativeMML"
-  ],
-  "TeX": {
-    "Macros": {
-      "ket": [
-        "\\lvert #1 \\rangle",
-        1
+require([], function() {
+window.MathJax = {
+  "tex": {
+    "packages": [
+      "base",
+      "ams",
+      "autoload",
+      "configmacros"
+    ],
+    "inlineMath": [
+      [
+        "\\(",
+        "\\)"
+      ]
+    ],
+    "macros": {
+      "xpvec": [
+        "R"
       ],
-      "tr": [
-        "\\operatorname{tr}"
-      ],
-      "dd": [
-        "\\mathrm{d}"
-      ],
-      "conj": [
-        "\\bar{#1}",
-        1
+      "diag": [
+        "\\operatorname{diag}"
       ],
       "bra": [
         "\\langle #1 \\rvert",
         1
       ],
-      "pure": [
-        "_{\\mathrm{p}}"
+      "outp": [
+        "\\lvert #1\\rangle \\langle #2\\rvert",
+        2
       ],
       "real": [
         "\\operatorname{Re}"
@@ -69,11 +65,12 @@ MathJax.Hub.Config({
         "\\lvert #1 \\rvert",
         1
       ],
-      "opt": [
-        "_{\\mathrm{opt}}"
+      "fmom": [
+        "r"
       ],
-      "N": [
-        "\\mathbb{N}"
+      "Og": [
+        "\\mathrm{O}(#1)",
+        1
       ],
       "R": [
         "\\mathbb{R}"
@@ -82,54 +79,148 @@ MathJax.Hub.Config({
         "\\lVert #1 \\rVert",
         1
       ],
-      "det": [
-        "\\operatorname{det}"
-      ],
-      "adj": [
-        "#1^\\dagger",
-        1
-      ],
-      "displacement": [
-        "\\mathcal{D}_{#1}",
-        1
+      "covmat": [
+        "\\sigma"
       ],
       "transpose": [
         "#1^{\\mathrm{T}}",
         1
       ],
-      "imag": [
-        "\\operatorname{Im}"
+      "defeq": [
+        "\\mathrel{\\mathop:}="
+      ],
+      "lseq": [
+        "\\ell_2"
+      ],
+      "Sp": [
+        "\\mathrm{Sp}(#1)",
+        1
+      ],
+      "iso": [
+        "\\cong"
+      ],
+      "iu": [
+        "\\mathrm{i}"
+      ],
+      "N": [
+        "\\mathbb{N}"
+      ],
+      "sympmat": [
+        "\\varOmega"
+      ],
+      "adj": [
+        "#1^\\dagger",
+        1
+      ],
+      "id": [
+        "1"
+      ],
+      "fockb": [
+        "\\mathscr{F}"
+      ],
+      "tsp": [
+        "^{\\otimes #1}",
+        1
       ],
       "C": [
         "\\mathbb{C}"
-      ]
-    }
-  },
-  "tex2jax": {
-    "inlineMath": [
-      [
-        "$",
-        "$"
       ],
-      [
-        "\\(",
-        "\\)"
+      "fcomm": [
+        "\\{#1\\}",
+        1
+      ],
+      "imat": [
+        "I_{#1}",
+        1,
+        ""
+      ],
+      "tr": [
+        "\\operatorname{tr}"
+      ],
+      "Num": [
+        "\\mathscr{N}"
+      ],
+      "dd": [
+        "\\mathrm{d}"
+      ],
+      "spunitarymp": [
+        "\\spunitarysymbol^{[#1]}(#2)",
+        2,
+        ""
+      ],
+      "conj": [
+        "\\bar{#1}",
+        1
+      ],
+      "gauss": [
+        "\\gamma_{#1}",
+        1
+      ],
+      "spunitarysymbol": [
+        "\\mathscr{U}"
+      ],
+      "det": [
+        "\\operatorname{det}"
+      ],
+      "vacuum": [
+        "\\varOmega"
+      ],
+      "ket": [
+        "\\lvert #1 \\rangle",
+        1
+      ],
+      "spunitary": [
+        "\\spunitarysymbol(#1)",
+        1
+      ],
+      "innp": [
+        "\\langle #1, #2\\rangle",
+        2
+      ],
+      "modepart": [
+        "^{[#1]}",
+        1
+      ],
+      "ns": [
+        "f_{#1}",
+        1
+      ],
+      "sb": [
+        "_{#1}",
+        1
+      ],
+      "pure": [
+        "_{\\mathrm{p}}"
+      ],
+      "multi": [
+        "\\mathbf{#1}",
+        1
+      ],
+      "opt": [
+        "_{\\mathrm{opt}}"
+      ],
+      "displacement": [
+        "\\mathscr{D}_{#1}",
+        1
+      ],
+      "imag": [
+        "\\operatorname{Im}"
       ]
-    ],
-    "processEscapes": true
+    },
+    "tags": "ams"
   },
-  "config": [
-    "MMLorHTML.js"
-  ],
-  "extensions": [
-    "MathMenu.js",
-    "MathZoom.js",
-    "TeX/AMSmath.js",
-    "TeX/AMSsymbols.js",
-    "TeX/autobold.js",
-    "TeX/autoload-all.js"
-  ]
-});
+  "options": {
+    "ignoreHtmlClass": "tex2jax_ignore",
+    "processHtmlClass": "tex2jax_process"
+  }
+};
+
+(function () {
+    var script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js';
+    script.async = true;
+    document.head.appendChild(script);
+})();
 
 })
 ////////////////////////////////////////////////////////////////////////////////
