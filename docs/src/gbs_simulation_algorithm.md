@@ -3,7 +3,8 @@
 In this page we will analyse the algorithm for simulating the outcomes of a
 Gaussian boson-sampling experiment in more detail.
 Since the formulae are already quite heavy by themselves, we will not use the
-braket notation, opting for a leaner mathematical style.
+braket notation (except for the outer product \\(\outp{u}{v}\\) of two vectors
+\\(u\\) and \\(v\\)), opting for a lighter mathematical style.
 
 ## Gaussian states
 
@@ -12,21 +13,21 @@ that we will need later.
 
 ### Definition
 
-Our context is the Hilbert space of \\(M\\) bosonic modes.  For a single mode
-the space is the Fock space \\(\fockb(\C) \iso \lseq(\C)\\), and for \\(M\\)
-modes we have \\(\fockb(\C)\tsp{M} \iso \fockb(\C^M)\\).  For \\(n\in\N\\), we
-call \\(\ns{n}\in\\fockb(\C)\\) the eigenvector of the number operator with
-eigenvalue \\(n\\), and for a multi-index
-\\(\multi{n}=(n\sb1,\dotsc,n\sb{M})\in\N^M\\) we define
-\\(\ns{\multi{n}}\in\fockb(\C)\tsp{M}\\) as \\(\ns{n\sb1} \otimes \dotsb \otimes
-\ns{n\sb{M}}\\).  These vector form an orthonormal basis of the overall Fock
-space; \\(\ns{0}\\) is also the vacuum vector, which we will denote by
-\\(\vacuum\\).
+Our context is the Hilbert space of \\(n\\) bosonic modes.  For a single mode
+the space is the Fock space \\(\fockb(\C) \iso \lseq(\C)\\), and for \\(n\\)
+modes we have \\(\fockb(\C)\tsp{n} \iso \fockb(\C^n)\\).  For \\(m\in\N\\), we
+call \\(\ns{m}\in\\fockb(\C)\\) the eigenvector of the number operator with
+eigenvalue \\(m\\), and for a multi-index
+\\(\multi{m}=(m\sb1, \dotsc, m\sb{n})\in\N^n\\) we define
+\\(\ns{\multi{m}} \in \fockb(\C)\tsp{n}\\) as \\(\ns{m\sb1} \otimes \dotsb
+\otimes \ns{m\sb{n}}\\).
+These vectors form an orthonormal basis of the overall Fock space; \\(\ns{0}\\)
+is also the vacuum vector, which we will denote by \\(\vacuum\\).
 
 Let \\(R\\) be a vector collecting the single-mode position and momentum
 operators as \\(\xpvec\sb{2j-1} \defeq x\sb{j}\\) and \\(\xpvec\sb{2j} \defeq
-p\sb{j}\\), for \\(j\in\\{1,\dotsc,M\\}\\).  A Gaussian state \\(\rho\\) on
-\\(\fockb(\C^M)\\) is completely determined by its first and second moments,
+p\sb{j}\\), for \\(j\in\\{1,\dotsc,n\\}\\).  A Gaussian state \\(\rho\\) on
+\\(\fockb(\C^n)\\) is completely determined by its first and second moments,
 gathered in the vector \\(r\\) and in the _covariance matrix_ \\(\covmat\\)
 defined as
 
@@ -40,44 +41,165 @@ defined as
 \end{gather*}
 ```
 
-for \\(j,k\in\\{1,\dotsc,2M\\}\\).
+for \\(j,k\in\\{1,\dotsc,2n\\}\\).
 Covariance matrices are always positive-definite and satisfy
 \\(\covmat+\iu\sympmat \geq 0\\), where
 
 ```math
-\sympmat \defeq \imat[M] \otimes
+\sympmat \defeq \imat[n] \otimes
 \begin{pmatrix}
   0  & 1\\
   -1 & 0
 \end{pmatrix}
 ```
 
-is the reference symplectic matrix.
+is the reference symplectic matrix, such that \\([\xpvec\sb{j}, \xpvec\sb{k}] =
+\iu\sympmat\sb{jk}\\).
 We will denote by \\(\gauss{\fmom,\covmat}\\) the Gaussian state given by its
 covariance matrix \\(\covmat\\) and the vector \\(\fmom\\) of its first moments,
 or just \\(\gauss{\covmat}\\) if \\(\fmom=0\\), as is often the case.
 
-### Unitary representation of the symplectic group on a Fock space
+### The symplectic group
 
-!!! todo
-    Representations \\(\spunitarysymbol\\) of \\(\Sp{2n,\R}\\) on the space of
-    unitary operators on \\(\fockb(\C)^n\\).
+The symplectic group \\(\Sp{2n,\R}\\) is the group \\(\set{ S \in \Mat{2n,\R} }{
+S \sympmat \transpose{S} = \sympmat }\\) where \\(\sympmat\\) is a
+skew-symmetric \\(2n \times 2n\\) real matrix such that \\(\sympmat^2 =
+-\imat[2n]\\).  Every symplectic matrix has determinant \\(\pm 1\\), is
+invertible and \\(S^{-1} = -\sympmat \transpose{S} \sympmat\\).
+
+!!! info "Alternative notation for symplectic matrices"
+    There are other choices for the skew-symmetric matrix \\(\sympmat\\) that
+    defines the properties of the symplectic group: another popular choice is
+   
+    ```math
+    \sympmat \defeq
+    \begin{pmatrix}
+      0  & 1 \\ -1 & 0
+    \end{pmatrix}
+    \otimes
+    \imat[n],
+    ```
+
+    with which some properties can be written in a clearer way.
+    We can switch back and forth between these two notations with a permutation
+    matrix \\(Y\\) such that \\(\imat[n] \otimes \begin{psmallmatrix} 0 & 1 \\\\
+    -1 & 0 \end{psmallmatrix} = Y \bigl(\begin{psmallmatrix} 0 & 1 \\\\ -1 & 0
+    \end{psmallmatrix} \otimes \imat[n]\bigr) \transpose{Y}\\).
+
+Let \\(\UtoSp \colon \Mat{n,\C} \to \Mat{2n,\R}\\) be the map
+
+```math
+\UtoSp(M) =
+Y \begin{pmatrix}
+    M\real & -M\imag \\ M\imag & M\real
+\end{pmatrix} \transpose{Y},
+```
+
+where \\(M\real\\) and \\(M\imag\\) are the real and imaginary parts of \\(M\\),
+respectively.  If \\(U\\) is an \\(n\times n\\) unitary matrix, then
+\\(\UtoSp(U) \transpose{\UtoSp(U)} = \imat[2n]\\) and \\(\UtoSp(U) \sympmat
+\transpose{\UtoSp(U)} = \sympmat\\), therefore \\(\UtoSp(U) \in \Sp{2n,\R} \cap
+\Og{2n}\\).  Vice versa, if \\(M \in \Sp{2n,\R} \cap \Og{2n}\\) then there exist
+\\(A,B \in \Mat{n,\R}\\) such that \\(\transpose{Y} M Y = \begin{psmallmatrix} A
+& -B \\\\ B & A \end{psmallmatrix}\\) and \\(A + \iu B \in \Ug{n}\\).  The map
+\\(\UtoSp\\) is thus actually a group isomorphism between \\(\Ug{n}\\) and
+\\(\Sp{2n,\R} \cap \Og{2n}\\).
+
+Moreover, \\(M \in \Mat{n, \C}\\) is positive-(semi)definite if and only if
+\\(\UtoSp(M)\\) is.
+
+#### Williamson decomposition
+
+Let \\(A\\) be a positive-definite \\(2n \times 2n\\) matrix: then there exists
+\\(S \in \Sp{2n,\R}\\) and \\(D = \bigoplus\sb{j=1}^n d\sb{j} \imat[2]\\), with
+\\(d\sb{j} \geq 1\\), such that \\(A = S D \transpose{S}\\) (cfr. Eq. (3.58) in
+[Serafini2023](@cite)).
+
+#### Euler decomposition
+
+Let \\(S \in \Sp{2n,\R}\\): then there exist \\(P,Q \in \Sp{2n,\R} \cap
+\Og{2n}\\) and \\(d\sb{1},\dotsc,d\sb{n} > 0\\) such that \\(S = PDQ\\) where
+\\(D = \bigoplus\sb{j=1}^{n} \begin{psmallmatrix} d\sb{j} & 0 \\\\ 0 &
+d\sb{j}^{-1} \end{psmallmatrix}\\).
+
+We can have the outcome be unitary matrices with the aid of the \\(\UtoSp\\) map
+introduced before: given a symplectic \\(2n \times 2n\\) matrix \\(S\\), we can
+find \\(U,V \in \Ug{n}\\) such that \\(\UtoSp(U) D \UtoSp(V) = S\\).
+
+### Unitary representation on a symmetric Fock space
+
+The symplectic group of order \\(2n\\) admits a unitary representation
+\\(\spunitarysymbol\\) on the symmetric (i.e. bosonic) Fock space with \\(n\\)
+modes, \\(\fockb(\C^n)\\).
+Given \\(S \in \Sp{2n, \R}\\), its action on the vector \\(\xpvec\\) of position
+and momentum operators is given by
+
+```math
+\begin{equation}
+    \adj{\spunitary{S}} \xpvec_j \spunitary{S} \defeq
+    \sum_{k=1}^{2n} S_{jk} \xpvec_k.
+\end{equation}
+```
+
+such that the canonical commutation relations are preserved, since
+
+```math
+\begin{equation*}
+    [%
+        \adj{\spunitary{S}} R_j \spunitary{S},
+        \adj{\spunitary{S}} R_k \spunitary{S}
+    ] =
+    \sum_{l=1}^{2n} \sum_{m=1}^{2n} S_{jl} S_{km} \sympmat_{lm} =
+    \sympmat_{jk}.
+\end{equation*}
+```
+
+On the annihilation and creation operators of the \\(j\\)-th mode, \\(a\sb{j} =
+\frac{1}{\sqrt{2}}(R\sb{2j-1} + \iu R\sb{2j})\\) and \\(\adj{a\sb{j}} =
+\frac{1}{\sqrt{2}}(R\sb{2j-1} - \iu R\sb{2j})\\), it behaves as
+
+```math
+\begin{multline}
+    \adj{\spunitary{S}} a_j \spunitary{S} =
+    \frac12 \sum_{k=1}^{n} \bigl[
+        (S_{2j-1,2k-1} + S_{2j,2k}) + \iu (S_{2j,2k-1} - S_{2j-1,2k})
+    \bigr] a_k +\\+ \frac12 \sum_{k=1}^{n} \bigl[
+        (S_{2j-1,2k-1} - S_{2j,2k}) + \iu (S_{2j,2k-1} + S_{2j-1,2k})
+    \bigr] \adj{a_k}
+\end{multline}
+```
+
+and similarly for \\(\adj{\spunitary{S}} \adj{a\sb{j}} \spunitary{S}\\).
+If \\(S\\) is also orthogonal, then with \\(M = \UtoSp^{-1}(S)\\) we can also
+write
+
+```math
+\begin{equation}
+  \begin{gathered}
+    \adj{\spunitary{\UtoSp(M)}} a_j \spunitary{\UtoSp(M)} =
+    \sum_{k=1}^{n} M_{jk} a_k,\\
+    \adj{\spunitary{\UtoSp(M)}} \adj{a_j} \spunitary{\UtoSp(M)} =
+    \sum_{k=1}^{n} \overline{M_{jk}} \adj{a_k}.
+  \end{gathered}
+  \label{eq:fock_space_action_symplectic_orthogonal_matrices_shorter}
+\end{equation}
+```
 
 ### Normal-mode decomposition
 
 The covariance matrix can always be diagonalised through a symplectic
-transformation: there always exist \\(S\in\Sp{2M,\R}\\) and
-\\(\\{\lambda\sb{j}\\}\sb{j=1}^{M}\\), \\(\lambda\sb{j} \geq 1\\) such that
+transformation: the Williamson decomposition tells us that there always exist
+\\(S\in\Sp{2n,\R}\\) and \\(\\{\lambda\sb{j}\\}\sb{j=1}^{n}\\), \\(\lambda\sb{j}
+\geq 1\\) such that
 
 ```math
 \begin{equation}
     \covmat =
-    S \biggl( \bigoplus_{j=1}^{M} \lambda_j\imat[2] \biggr) \transpose{S}
+    S \biggl( \bigoplus_{j=1}^{n} \lambda_j\imat[2] \biggr) \transpose{S}
 \label{eq:covmat-symplectic-diagonalisation}
 \end{equation}
 ```
 
-(cfr. Eq. (3.58) in [Serafini2023](@cite)).
 The _symplectic eigenvalues_ \\(\lambda\sb{j}\\) determine, in turn, the
 singular values of the whole state, which can be written as
 
@@ -85,7 +207,7 @@ singular values of the whole state, which can be written as
 \begin{equation}
     \gauss{\fmom,\covmat} =
     \displacement{r} \spunitary{S} \Biggl(
-        \bigotimes_{j=1}^{M} \biggl(
+        \bigotimes_{j=1}^{n} \biggl(
             \sum_{m=0}^{+\infty} \nu_m(\lambda_j) \outp{\ns{m}}{\ns{m}}
         \biggr)
     \Biggr)
@@ -94,7 +216,7 @@ singular values of the whole state, which can be written as
 \end{equation}
 ```
 
-where \\(\spunitary{S}\\) is the unitary map on \\(\fockb(\C)\tsp{M}\\)
+where \\(\spunitary{S}\\) is the unitary map on \\(\fockb(\C)\tsp{n}\\)
 generated by the symplectic matrix \\(S\\) appearing in
 \eqref{eq:covmat-symplectic-diagonalisation}, \\(\displacement{r}\\) is the
 displacement operator by \\(r\\) and
@@ -109,8 +231,8 @@ We can rewrite this by exchanging tensor product and sum, obtaining
 \begin{equation}
     \gauss{\fmom,\covmat} =
     \displacement{r} \spunitary{S} \Biggl(
-        \sum_{\multi{m} \in \N^M} \biggl(
-            \prod_{j=1}^{M} \nu_{m_j}(\lambda_j)
+        \sum_{\multi{m} \in \N^n} \biggl(
+            \prod_{j=1}^{n} \nu_{m_j}(\lambda_j)
         \biggr)
         \outp{\ns{\multi{m}}}{\ns{\multi{m}}}
     \Biggr)
@@ -119,13 +241,13 @@ We can rewrite this by exchanging tensor product and sum, obtaining
 \end{equation}
 ```
 
-or, by defining \\(\hat{\nu}\sb{\multi{m}}(\lambda) \defeq \prod\sb{j=1}^{M}
+or, by defining \\(\hat{\nu}\sb{\multi{m}}(\lambda) \defeq \prod\sb{j=1}^{n}
 \nu\sb{m\sb{j}}(\lambda\sb{j})\\),
 
 ```math
 \begin{equation}
     \gauss{\fmom,\covmat} =
-    \sum_{\multi{m} \in \N^M} \hat{\nu}_\multi{m}(\lambda) \,
+    \sum_{\multi{m} \in \N^n} \hat{\nu}_\multi{m}(\lambda) \,
     \displacement{r} \spunitary{S}
     \outp{\ns{\multi{m}}}{\ns{\multi{m}}}
     \adj{\spunitary{S}} \adj{\displacement{r}}.
