@@ -35,7 +35,8 @@ window.MathJax = {
       "base",
       "ams",
       "autoload",
-      "configmacros"
+      "configmacros",
+      "mathtools"
     ],
     "inlineMath": [
       [
@@ -48,11 +49,24 @@ window.MathJax = {
       ]
     ],
     "macros": {
+      "Mat": [
+        "\\mathrm{Mat}(#1)",
+        1
+      ],
+      "Im": [
+        "\\mathrm{Im}"
+      ],
+      "Re": [
+        "\\mathrm{Re}"
+      ],
       "xpvec": [
         "R"
       ],
       "diag": [
         "\\operatorname{diag}"
+      ],
+      "UtoSp": [
+        "\\phi"
       ],
       "bra": [
         "\\langle #1 \\rvert",
@@ -63,7 +77,7 @@ window.MathJax = {
         2
       ],
       "real": [
-        "\\operatorname{Re}"
+        "_{\\mathrm{r}}"
       ],
       "abs": [
         "\\lvert #1 \\rvert",
@@ -78,6 +92,10 @@ window.MathJax = {
       ],
       "R": [
         "\\mathbb{R}"
+      ],
+      "Ug": [
+        "\\mathrm{U}(#1)",
+        1
       ],
       "norm": [
         "\\lVert #1 \\rVert",
@@ -203,12 +221,16 @@ window.MathJax = {
       "opt": [
         "_{\\mathrm{opt}}"
       ],
+      "set": [
+        "\\{\\, #1 \\;\\vert\\; #2\\,\\}",
+        2
+      ],
       "displacement": [
         "\\mathscr{D}_{#1}",
         1
       ],
       "imag": [
-        "\\operatorname{Im}"
+        "_{\\mathrm{i}}"
       ]
     },
     "tags": "ams"
